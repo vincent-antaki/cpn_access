@@ -8,7 +8,9 @@ class PetriNet:
         self.pre = np.mat(pre) #size of both matrix P x T, every elements of those matrix are non-negative
         self.post = np.mat(post)
         assert self.pre.shape == self.post.shape
-    
+        self.shape = self.pre.shape
+        self.__dict__.extends(self.pre.shape.__dict__)
+        
     def incidenceMatrix(self):
         return self.post - self.pre       
     
@@ -33,7 +35,8 @@ class PetriNet:
 
     #soit t, un array qui contient les index des transitions            
     def subnet(self, t):
-        assert all(x >= 0 and x <= self.post.shape[1] for x in t)
+        assert all(x >= 0 and x < self.post.shape[1] for x in t)
+        #subplaces = np.unique([np.concatenate((self.preset(x),self.postset(x))) for x in t]).sort() #one-liner alternatif de la mort, a tester
         subplaces = list(set(np.concatenate([self.preset(x) for x in t])).union(set(np.concatenate([self.postset(x) for x in t]))))  
         print(subplaces)
         return PetriNet(np.take(self.pre.take(t,axis=1),subplaces,axis=0),np.take(self.post.take(t,axis=1),subplaces,axis=0))
@@ -59,7 +62,7 @@ def petrinet_test():
     post = ((0, 3, 1, 0), 
             (1, 0, 0, 0), 
             (2, 1, 0, 1))
-    p PetriNet(pre, post)    
+    p = PetriNet(pre, post)    
     assert np.array_equal(p.preset(1),[0,1])
     assert np.array_equal(p.postset(1),[0,2])
     assert np.array_equal(p.preset(3),[1])

@@ -1,9 +1,10 @@
-import numpy as np
-import pydoc
 import PetriNet as pn
+import cpn_analysis as cpn
+import numpy as np
 
-def __main__():
-    pn.petrinet_test()
-
+#pn.petrinet_test()
+a = pn.getTestPetriNet()
+z = cpn.fireable(a,np.array([4,3,4]),[0,1])
+print(z)
         
 
