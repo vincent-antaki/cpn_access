@@ -33,14 +33,28 @@ class PetriNet:
     def reverseNet(self):
         return PetriNet(self.post, self.pre)
 
-    #soit t, un array qui contient les index des transitions            
-    def subnet(self, t):
+    #soit t, un array qui contient les index des transitions 
+    
+    # t : an array of index of the transitions to transfer to subnet
+    #subnet : a PetriNet instance with only the transitions in t and (if subplaces == True)
+    
+    #return : if subplaces == False : return subnet
+    #         if subplaces : return (subnet,subplaces)
+                
+    def subnet(self, t, subplaces = False):
+    
         assert all(x >= 0 and x < self.post.shape[1] for x in t)
-        #subplaces = np.unique([np.concatenate((self.preset(x),self.postset(x))) for x in t]).sort() #one-liner alternatif de la mort, a tester
-        subplaces = list(set(np.concatenate([self.preset(x) for x in t])).union(set(np.concatenate([self.postset(x) for x in t]))))  
-        print(subplaces)
-        return PetriNet(np.take(self.pre.take(t,axis=1),subplaces,axis=0),np.take(self.post.take(t,axis=1),subplaces,axis=0))
 
+        #subplaces = np.unique([np.concatenate((self.preset(x),self.postset(x))) for x in t]).sort() 
+        #one-liner moins lourd, a tester
+        if subplaces == True:
+            subplaces = list(set(np.concatenate([self.preset(x) for x in t])).union(set(np.concatenate([self.postset(x) for x in t]))))  
+            return (PetriNet(np.take(self.pre.take(t,axis=1),subplaces,axis=0),np.take(self.post.take(t,axis=1),subplaces,axis=0)), subplaces )
+        else :
+            return PetriNet(self.pre.take(t,axis=1),self.post.take(t,axis=1))
+            
+            
+            
     def __str__(self) :
         return "{ pre: \n"+str(self.pre)+",\npos :\n"+ str(self.post)+ " }"
 
@@ -54,7 +68,7 @@ def getTestPetriNet():
             (0, 1, 0, 1))
     return PetriNet(pre, post)    
 
-def petrinet_test():
+def test():
     pre = ((1, 1, 0, 0), 
             (1, 2, 0, 1), 
             (0, 0, 1, 0))
