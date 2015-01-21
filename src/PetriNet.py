@@ -1,4 +1,5 @@
 import numpy as np
+from contracts import pre, post
 
 class PetriNet:
 
@@ -68,19 +69,21 @@ def getTestPetriNet():
             (0, 1, 0, 1))
     return PetriNet(pre, post)    
 
-def test():
-    pre = ((1, 1, 0, 0), 
-            (1, 2, 0, 1), 
-            (0, 0, 1, 0))
-            
-    post = ((0, 3, 1, 0), 
-            (1, 0, 0, 0), 
-            (2, 1, 0, 1))
-    p = PetriNet(pre, post)    
-    assert np.array_equal(p.preset(1),[0,1])
-    assert np.array_equal(p.postset(1),[0,2])
-    assert np.array_equal(p.preset(3),[1])
-    assert p.preset(1, place=True) == [0]    
-    assert np.array_equal(p.postset(0,True),[0,1]) 
-    assert np.array_equal(p.postset(1,True),[0,1,3])
-    assert np.array_equal(p.postset(1,True),[0,1,3])
+def apply_transition(net, m0, transitions):
+    for t in transitions:
+        m0 -= net.pre.transpose()[t]
+        assert m0[m0 < 0].size == 0
+        m0 += net.post.transpose()[t]
+        yield m0.copy()
+        
+if __name__ == '__main__':
+    net = getTestPetriNet()
+    z=apply_transition(net, (2, 7, 3), [1, 0, 2, 3, 2, 0])
+    print(list(z))
+
+        
+
+
+
+    
+
