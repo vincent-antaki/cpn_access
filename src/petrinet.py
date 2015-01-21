@@ -42,7 +42,6 @@ def subnet(net, t, subplaces = False):
     else :
         return net.take(t, axis=1)
 
-# example de réseau de petri
 petrinet = np.matrix([
         [(1, 2), (5, 6), (7, 8), (9, 0)],
         [(1, 2), (5, 6), (7, 8), (9, 0)]],
