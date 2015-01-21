@@ -21,10 +21,7 @@ def fireable(n, m, t1):
     return (True,None)
 
 #takes in input : n, a petriNet instance; m0, an initial marking; m, a marking 
-#returns a tuple with 
-#       reachable? : a boolean
-#       Parikh Image : if reachable==false return None 
-#       
+#returns False if not reachable, returns Parikh Image if reachable
 #m0 and m are considered to be a numpy arrays
 def reachable(n, m0, m, limreach=False):
     n1, n2   = n.shape
@@ -32,32 +29,39 @@ def reachable(n, m0, m, limreach=False):
     assert len(m) == n1 and n1 == len(m0)
 
     if (m == m0).all() : return (True,0)
-    t1 = np.array(range(0,n2))
+    t1 = np.array(range(0,n2)) #initialy, t1 represents all the transitions of the petri net n
     b_eq = np.array(m - m0)
-
+    print("initial marking : ", m0, " objective marking : ", m )
+    print("objective : ", b_eq)
     while t1.size != 0:
     
         nbsol, sol, l  = 0,np.zeros(n2), len(t1) #sol est initialisé comme vecteur nul         
         A_eq = n.subnet(t1).incidenceMatrix()
         b_up = np.zeros(l)
-        A_up = np.identity(l) ###numpy.identity vs numpy.eye?               
+        A_up = np.identity(l)  
        
         for t in t1:            
             objective_vector = [objective(t,x) for x in range(0,n2)]
             v = None
             try : 
                 def strict_positive_t(xk, **kwargs) : 
+                    print("blabla /n")
+                    print(xk)
                     if kwargs["phase"] == 2 and xk[t] > 0 : 
                         v = xk 
                         raise StopIteration                  
                                           
                 #http://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.linprog.html        
                 #solve (exist v | v>=0 and v[t]>0 and C_{PxT1}v = m - m0)            
-                optimize.linprog(objective_vector, A_up, b_up, A_eq, b_eq, callback = strict_positive_t) 
+                print(A_eq,"/n",b_eq)
+                result = optimize.linprog(objective_vector, A_up, b_up, A_eq, b_eq, callback = strict_positive_t)
+                print(result)
             
             except StopIteration :
-                nbsol, sol =+ 1, v 
-        
+                print("stopped")
+                nbsol += 1
+                sol += v 
+        print(nbsol)
         if nbsol == 0 : return False
         else : sol *= 1/nbsol
         
@@ -69,7 +73,7 @@ def reachable(n, m0, m, limreach=False):
             t1 = np.insersect1d(t1, fireable(sub, m.take(subplaces)),assume_unique=True)
 
         if t1 == sol.nonzero() : 
-            return (True, sol)
+            return sol
             
 def objective(t,x):
     if t == x : return -1
