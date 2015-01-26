@@ -1,5 +1,7 @@
 import numpy as np
 from scipy import optimize
+from nose.tools import set_trace 
+
 import PetriNet
     
 #takes in input :
@@ -37,33 +39,37 @@ def reachable(n, m0, m, limreach=False):
     
         nbsol, sol, l  = 0,np.zeros(n2), len(t1) #sol est initialisé comme vecteur nul         
         A_eq = n.subnet(t1).incidenceMatrix()
-        b_up = np.zeros(l)
-        A_up = np.identity(l)  
-       
+        #b_up = np.zeros(l)
+        #A_up = np.identity(l)  
+               
         for t in t1:            
             objective_vector = [objective(t,x) for x in range(0,n2)]
-            v = None
-            try : 
-                def strict_positive_t(xk, **kwargs) : 
-                    print("blabla /n")
-                    print(xk)
-                    if kwargs["phase"] == 2 and xk[t] > 0 : 
-                        v = xk 
-                        raise StopIteration                  
-                                          
+
+            def strict_positive_t(xk, **kwargs) :
+                 if kwargs["phase"] == 2 and xk[t] > 0 : 
+                     raise FoundSolution(xk)
+       
+            try :                                           
                 #http://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.linprog.html        
                 #solve (exist v | v>=0 and v[t]>0 and C_{PxT1}v = m - m0)            
                 print(A_eq,"/n",b_eq)
-                result = optimize.linprog(objective_vector, A_up, b_up, A_eq, b_eq, callback = strict_positive_t)
+                result = optimize.linprog(objective_vector, None, None, A_eq, b_eq, callback = strict_positive_t)
                 print(result)
             
-            except StopIteration :
-                print("stopped")
+                #if v[t]==0
+            
+            except FoundSolution as f :
                 nbsol += 1
-                sol += v 
+                print(f.solution)
+                #set_trace()
+                sol += f.solution
+                break
+        #set_trace()            
         print(nbsol)
-        if nbsol == 0 : return False
-        else : sol *= 1/nbsol
+        if nbsol == 0 :
+            return False
+        else :
+            sol *= 1/nbsol
         
         t1 = sol.nonzero()
         sub, subplaces = n.subnet(t1, True)
@@ -77,5 +83,9 @@ def reachable(n, m0, m, limreach=False):
             
 def objective(t,x):
     if t == x : return -1
-    else : return 1
-    
+    else : return 0
+
+class FoundSolution(Exception):
+    def __init__(self, solution):
+        self.solution = solution
+
