@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-
+from nose.tools import set_trace 
 from algorithms import *
 
 class FireableTest(unittest.TestCase):
@@ -15,20 +15,20 @@ class FireableTest(unittest.TestCase):
 
     def test_a(self):
     
-        self.assert_is_none(fireable(self.a, np.array((2, 7, 3)), np.array((0,1)))[1])
-        self.assert_is_none(fireable(self.a, np.array((2, 7, 3)), np.array((3)))[1])
-
-        self.assertTrue(np.array_equal(fireable(self.a, np.array((2, 0, 1)), np.array([3]))[1],(np.array([]))))        
-        self.assertTrue(np.array_equal(fireable(self.a, np.array((1, 0, 3)), np.array([2,3])),(np.array([2]))))        
+        self.assertIsNone(fireable(self.a, np.array((2, 7, 3)), np.array((0,1)))[1])
+        self.assertIsNone(fireable(self.a, np.array((2, 7, 3)), np.array((3)))[1])
+        set_trace()
+        self.assertTrue(np.array_equal(fireable(self.a, np.array((2, 0, 1)), np.array([3]))[1],np.array([])))        
+        self.assertTrue(np.array_equal(fireable(self.a, np.array((1, 0, 3)), np.array([2,3])),np.array([2])))        
 
         
 class ReachableTest(unittest.TestCase):
 
     def setUp(self):
         self.a = np.matrix(
-               (((1,0), (1,3), (0,1), (1,0)),
+               [((1,0), (1,3), (0,1), (1,0)),
                 ((1,1), (2,0), (0,0), (0,0)),
-                ((0,0), (0,1), (1,0), (0,1))),
+                ((0,0), (0,1), (1,0), (0,1))],
         dtype=[('pre', 'uint'), ('post', 'uint')])
 
     def test_reachable(self):

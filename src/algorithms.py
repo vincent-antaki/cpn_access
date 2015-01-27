@@ -10,9 +10,9 @@ from petrinet import preset, postset
 #If sequence is not fireable, it returns a tuple (False, t2) where t2 is the _____
 #If sequence si fireable it returns (True, None)
 def fireable(net, m, t1):
-    t2,p = np.empty(1), m.nonzero()[0]
+    t2,p = np.empty((0,)), m.nonzero()[0]
     t1 = np.array(t1)
-    assert n.shape[0] == m.shape[0]
+    assert net.shape[0] == m.shape[0]
 
     while np.setdiff1d(t1,t2).size != 0:
         new = False

@@ -18,7 +18,7 @@ def maxFS(n, m):
 #
 def fireable(n, m, t1):
     set_trace()
-    t2,p = np.empty(1), m.nonzero()[0]
+    t2,p = np.empty((0,)), m.nonzero()[0]
     t1 = np.array(t1)
     assert n.shape[0] == m.shape[0]
 
