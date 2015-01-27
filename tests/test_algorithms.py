@@ -17,9 +17,11 @@ class FireableTest(unittest.TestCase):
     
         self.assertIsNone(fireable(self.a, np.array((2, 7, 3)), np.array((0,1)))[1])
         self.assertIsNone(fireable(self.a, np.array((2, 7, 3)), np.array((3)))[1])
-        set_trace()
+        #set_trace()
+        pass
+        
         self.assertTrue(np.array_equal(fireable(self.a, np.array((2, 0, 1)), np.array([3]))[1],np.array([])))        
-        self.assertTrue(np.array_equal(fireable(self.a, np.array((1, 0, 3)), np.array([2,3])),np.array([2])))        
+        self.assertTrue(np.array_equal(fireable(self.a, np.array((1, 0, 3)), np.array([2,3]))[1],np.array([2])))        
 
         
 class ReachableTest(unittest.TestCase):
