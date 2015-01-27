@@ -3,13 +3,21 @@ from scipy import optimize
 from nose.tools import set_trace 
 
 import PetriNet
-    
+
+def maxFS(n, m):
+    #set_trace()
+    fire, vector = fireable(n,m,range(0,n.shape[1]))
+    print(f)
+    return f
+
+
 #takes in input :
 #n, a petriNet instance; 
 #m, a numpy array representing an initial marking; 
 #t1, an array of ordered index representing a subset of transitions of n 
 #
 def fireable(n, m, t1):
+    set_trace()
     t2,p = np.empty(1), m.nonzero()[0]
     t1 = np.array(t1)
     assert n.shape[0] == m.shape[0]
@@ -19,8 +27,8 @@ def fireable(n, m, t1):
         for t in np.setdiff1d(t1,t2) :
             if all(np.in1d(n.preset(t),p,assume_unique=True)) :
                 t2, p, new = np.union1d(t2,[t]), np.union1d(p,n.postset(t)), True
-        if not new : return (False, t2)
-    return (True,None)
+        if not new : return False, t2
+    return True, None
 
 #takes in input : n, a petriNet instance; m0, an initial marking; m, a marking 
 #returns False if not reachable, returns Parikh Image if reachable
@@ -73,10 +81,10 @@ def reachable(n, m0, m, limreach=False):
         
         t1 = sol.nonzero()
         sub, subplaces = n.subnet(t1, True)
-        t1 = np.insersect1d(t1, fireable(sub, m0.take(subplaces)),assume_unique=True)
+        t1 = np.intersect1d(t1, maxFS(sub, m0.take(subplaces)),assume_unique=True)
 
         if limreach:
-            t1 = np.insersect1d(t1, fireable(sub, m.take(subplaces)),assume_unique=True)
+            t1 = np.insersect1d(t1, maxFS(sub, m.take(subplaces)),assume_unique=True)
 
         if t1 == sol.nonzero() : 
             return sol

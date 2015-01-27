@@ -1,8 +1,10 @@
 import unittest
-
 import PetriNet as pn
+import numpy as np
+import petrinet as apn
 from nose.tools import set_trace 
-from cpn_analysis import *
+
+
 
 class PrePostsetTest(unittest.TestCase):
 
@@ -30,37 +32,38 @@ class PrePostsetTest(unittest.TestCase):
         self.assertTrue(np.array_equal(self.p.postset(1,True),[0,1,3]))
         self.assertTrue(np.array_equal(self.p.postset(1),[0,2]))        
     
-        
-class CPNTest(unittest.TestCase):
+class ReccordArrayPrePostsetTest(unittest.TestCase):
+
 
     def setUp(self):
-        self.a = pn.PetriNet(
-                ((1, 1, 0, 1), 
-                (1, 2, 0, 0), 
-                (0, 0, 1, 0)),
-                
-                ((0, 3, 1, 0), 
-                (1, 0, 0, 0), 
-                (0, 1, 0, 1)))
+        self.net = np.matrix([
+         [(2, 0), (0, 0), (3, 8), (1, 2), (0,37), (0,0)],
+         [(0, 3), (1, 3), (5, 0), (5, 2), (23,0), (0,0)]],
+         dtype=[('pre', 'uint'), ('post', 'uint')])
 
-    def test_reachable(self):
-        m0 = np.array((2, 7, 3))
-        m = np.array((3, 5, 3)) 
+    def test_preset(self):
         #set_trace()
-        print((self.a.incidenceMatrix()*[[2],[1],[1],[0]]).getA1(), m - m0)     
-        z = reachable(self.a, m0, m) 
-        self.assertTrue(np.array_equiv((self.a.incidenceMatrix()*[[2],[1],[2],[1]]).getA1(), m - m0))
-        #valid path from m0 to m : [1,0,2,3,2,0]. associated Parikh image : [2,1,2,1]
-        self.assertTrue(z)
+        print(apn.preset(self.net,[0]))
+        print(np.array_equal(apn.preset(self.net, [0]),[0]))
         
-        #last = list(apply_transition(n, c, t))[-1]
+        self.assertTrue(np.array_equal(apn.preset(self.net, [0]),[0]))        
+        self.assertTrue(np.array_equal(apn.preset(self.net, [1]),[1]))
+        self.assertTrue(np.array_equal(apn.preset(self.net, [2]),[0,1]))
+        self.assertTrue(np.array_equal(apn.preset(self.net, [3]),[0,1]))
+        self.assertTrue(np.array_equal(apn.preset(self.net, [4]),[1]))
+        self.assertTrue(np.array_equal(apn.preset(self.net, [5]),[]))        
+        self.assertTrue(np.array_equal(apn.preset(self.net, [0], True),[2,3,4]))        
+        self.assertTrue(np.array_equal(apn.preset(self.net, [1], True),[0,1,3]))
         
-#for config in apply_transition(net, config_init, trans):
- #   print config
+    def test_postset(self) :     
         
- #   def test_fireable(self):
-#        z = fireable(self.a,,)
-        
+        self.assertTrue(np.array_equal(apn.postset(self.net, [0], True),[0,2,3]))        
+        self.assertTrue(np.array_equal(apn.postset(self.net, [1], True),[1,2,3,4]))
+        self.assertTrue(np.array_equal(apn.postset(self.net, [0]),[1]))
+        self.assertTrue(np.array_equal(apn.postset(self.net, [2]),[0]))
+        self.assertTrue(np.array_equal(apn.postset(self.net, [3]),[0,1]))
+        self.assertTrue(np.array_equal(apn.postset(self.net, [4]),[0]))
+        self.assertTrue(np.array_equal(apn.postset(self.net, [5]),[]))
         
         
 #unittest.run()

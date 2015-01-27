@@ -44,11 +44,11 @@ class PetriNet:
                 
     def subnet(self, t, subplaces = False):
     
-        assert all(x >= 0 and x < self.post.shape[1] for x in t)
+        assert (all(x >= 0) and all(x < self.post.shape[1]) for x in t)
 
         #subplaces = np.unique([np.concatenate((self.preset(x),self.postset(x))) for x in t]).sort() 
         #one-liner moins lourd, a tester
-        if subplaces == True:
+        if subplaces :
             subplaces = list(set(np.concatenate([self.preset(x) for x in t])).union(set(np.concatenate([self.postset(x) for x in t]))))  
             return (PetriNet(np.take(self.pre.take(t,axis=1),subplaces,axis=0),np.take(self.post.take(t,axis=1),subplaces,axis=0)), subplaces )
         else :
