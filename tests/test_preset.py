@@ -32,7 +32,7 @@ class PrePostsetTest(unittest.TestCase):
         self.assertTrue(np.array_equal(self.p.postset(1,True),[0,1,3]))
         self.assertTrue(np.array_equal(self.p.postset(1),[0,2]))        
     
-class ReccordArrayPrePostsetTest(unittest.TestCase):
+class RecTest(unittest.TestCase):
 
 
     def setUp(self):
@@ -46,7 +46,14 @@ class ReccordArrayPrePostsetTest(unittest.TestCase):
         print(apn.preset(self.net,[0]))
         print(np.array_equal(apn.preset(self.net, [0]),[0]))
         
-        self.assertTrue(np.array_equal(apn.preset(self.net, [0]),[0]))        
+        self.assertTrue(np.array_equal(apn.preset(self.net, [0]),[0]))    
+        self.assertTrue(np.array_equal(apn.preset(self.net, [0, 1]),[0, 1]))
+        
+        self.assertTrue(np.array_equal(apn.preset(self.net, [0, 5]),[0]))    
+        print(apn.preset(self.net, [0, 1, 2, 3, 4, 5]))
+        self.assertTrue(np.array_equal(apn.preset(self.net, [0, 1, 2, 3, 4, 5]), [0, 1]))    
+        
+            
         self.assertTrue(np.array_equal(apn.preset(self.net, [1]),[1]))
         self.assertTrue(np.array_equal(apn.preset(self.net, [2]),[0,1]))
         self.assertTrue(np.array_equal(apn.preset(self.net, [3]),[0,1]))

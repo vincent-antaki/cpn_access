@@ -9,16 +9,15 @@ def incident(net):
 #
 def preset(net, v, place=False):
     if place:
-        return net['post'][v].getA1().nonzero()[0]
+        return np.unique(net['post'][v].nonzero()[1].getA1())
     else :
-        return net['pre'].take(v,axis=1).getA1().nonzero()[0]
+        return np.unique(net['pre'].take(v,axis=1).nonzero()[0].getA1())
 
 def postset(net, v, place=False) :
     if place:
-        
-        return net['pre'][v].getA1().nonzero()[0]
+        return np.unique(net['pre'][v].nonzero()[1].getA1())
     else :
-        return net['post'].take(v,axis=1).getA1().nonzero()[0]
+        return np.unique(net['post'].take(v,axis=1).nonzero()[0].getA1())
 
 def reversed_net(net):
     return np.matrix(net, dtype=[('post', 'uint'), ('pre', 'uint')])
@@ -35,18 +34,25 @@ def subnet(net, t, subplaces = False):
 
     assert (all(x >= 0) and all(x < net['post'].shape[1]) for x in t)
 
-    #subplaces = np.unique([np.concatenate((net['pre']set(x),net['post']set(x))) for x in t]).sort()
     #one-liner moins lourd, a tester
+    print(net)
+    print("t",t)
     if subplaces == True:
-        subplaces = list(set(np.concatenate([preset(net, x) for x in t])).union(set(np.concatenate([postset(net, x) for x in t]))))
-        return net.take(t, axis=0).take(axis=1)
+        print(preset(net,t[0]),postset(net,t[0]))
+        presub = [np.concatenate(preset(net,x),postset(net,x)) for x in t]
+        print("presub", presub)
+        subplaces = np.unique(presub).sort()
+
+        #subplaces = list(set(np.concatenate([preset(net, x) for x in t])).union(set(np.concatenate([postset(net, x) for x in t]))))
+        print(subplaces)
+        return net.take(t, axis=0).take(subplaces, axis=1), subplaces
     else :
         return net.take(t, axis=1)
 
-#petrinet = np.matrix([
- #        [(2, 0), (0, 0), (3, 8), (1, 2), (0,37)],
-#         [(0, 3), (1, 3), (5, 0), (5, 2), (23,0)]],
-#         dtype=[('pre', 'uint'), ('post', 'uint')])
+petrinet = np.matrix([
+        [(2, 0), (0, 0), (3, 8), (1, 2), (0,37)],
+         [(0, 3), (1, 3), (5, 0), (5, 2), (23,0)]],
+         dtype=[('pre', 'uint'), ('post', 'uint')])
 
 #print("net:", petrinet)
 #print("preset:", preset(petrinet, [2]))
