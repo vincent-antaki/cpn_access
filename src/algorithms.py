@@ -18,7 +18,8 @@ def fireable(net, m, t1):
     while np.setdiff1d(t1,t2).size != 0:
         new = False
         for t in np.setdiff1d(t1,t2) :
-            if all(np.in1d(preset(net,t),p,assume_unique=True)) :
+            print(net, t, preset(net, [t]))
+            if all(np.in1d(preset(net, [t]),p,assume_unique=True)) :
                 t2, p, new = np.union1d(t2,[t]), np.union1d(p, postset(net, t)), True
         if not new : return (False, t2)
     return (True,None)
