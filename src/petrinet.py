@@ -5,7 +5,7 @@ def incident(net):
 
 #v is the an orderedlist of index of a transitions or a places
 #if place is True, fonction returns an ordered list of indexes v's input transitions (nonzero output transitions) indexes
-#else : input is a transition index, fct returns v's input places (nonzero i) 
+#else : input is a transition index, fct returns v's input places (nonzero i)
 #
 def preset(net, v, place=False):
     if place:
