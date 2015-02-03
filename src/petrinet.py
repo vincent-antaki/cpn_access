@@ -40,10 +40,7 @@ def subnet(net, t, subplaces = False):
     print(net)
     print("t",t)
     if subplaces == True:
-        print(preset(net,t[0]),postset(net,t[0]))
-        presub = [np.concatenate(preset(net,x),postset(net,x)) for x in t]
-        print("presub", presub)
-        subplaces = np.unique(presub).sort()
+        subplaces = np.union1d(preset(net,t),postset(net,t))
 
         #subplaces = list(set(np.concatenate([preset(net, x) for x in t])).union(set(np.concatenate([postset(net, x) for x in t]))))
         print(subplaces)

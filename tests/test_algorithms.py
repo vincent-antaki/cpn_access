@@ -15,8 +15,8 @@ class FireableTest(unittest.TestCase):
 
 
     def test_a(self):
-        self.assertIsNone(fireable(self.a, np.array((2, 7, 3)), np.array((0,1)))[1])
-        self.assertIsNone(fireable(self.a, np.array((2, 7, 3)), np.array((3)))[1])
+        self.assertTrue(fireable(self.a, np.array((2, 7, 3)), np.array((0,1)))[0])
+        self.assertTrue(fireable(self.a, np.array((2, 7, 3)), np.array((3)))[0])
         #set_trace()
         pass
 
@@ -39,7 +39,7 @@ class ReachableTest(unittest.TestCase):
 
         z = reachable(self.a, m0, m)
         #print(z)
-        self.assertTrue(np.array_equiv((incident(self.a)*[[2],[1],[2],[1]]).getA1(), m - m0))
+        self.assertTrue(np.array_equiv((pn.incident(self.a)*[[2],[1],[2],[1]]).getA1(), m - m0))
         #valid path from m0 to m : [1,0,2,3,2,0]. associated Parikh image : [2,1,2,1]
 
 #last = list(apply_transition(n, c, t))[-1]

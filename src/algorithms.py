@@ -3,6 +3,10 @@ from petrinet import *
 import numpy as np
 
 
+def maxFS(net, m):
+    return fireable(net,m,range(0,net.shape[1]))[1]
+ 
+
 #takes in input :
 #n, a numpy reccord matrix :
 #m, a numpy array representing an initial marking;
@@ -18,11 +22,10 @@ def fireable(net, m, t1):
     while np.setdiff1d(t1,t2).size != 0:
         new = False
         for t in np.setdiff1d(t1,t2) :
-            print(net, t, preset(net, [t]))
             if all(np.in1d(preset(net, [t]),p,assume_unique=True)) :
                 t2, p, new = np.union1d(t2,[t]), np.union1d(p, postset(net, t)), True
         if not new : return (False, t2)
-    return (True,None)
+    return (True,t2)
 
 #takes in input : n, a numpy reccord matrix representing a continuous petri net;
 #m0, an initial marking; m, a marking
@@ -69,14 +72,16 @@ def reachable(n, m0, m, limreach=False):
         else :
             sol *= 1/nbsol
 
-        t1 = sol.nonzero()
+        t1 = sol.nonzero()[0]
         sub, subplaces = subnet(n, t1, True)
+        
+        print(t1, maxFS(sub, m0.take(subplaces)))
         t1 = np.intersect1d(t1, maxFS(sub, m0.take(subplaces)),assume_unique=True)
 
         if limreach:
             t1 = np.insersect1d(t1, maxFS(reversed_net(sub), m.take(subplaces)),assume_unique=True)
 
-        if t1 == sol.nonzero() :
+        if (t1 == sol.nonzero()).all() :
             return sol
 
 def objective(t,x):
