@@ -20,7 +20,9 @@ def postset(net, v, place=False) :
         return np.unique(net['post'].take(v,axis=1).nonzero()[0].getA1())
 
 def reversed_net(net):
-    return np.matrix(net, dtype=[('post', 'uint'), ('pre', 'uint')])
+    dtype = net.dtype
+    dtype.names = ['post', 'pre']
+    return np.matrix(net, dtype=dtype)
 
 #soit t, un array qui contient les index des transitions
 
