@@ -15,13 +15,15 @@ def preset(net, v, place=False):
 
 def postset(net, v, place=False) :
     if place:
-        
+
         return net['pre'][v].getA1().nonzero()[0]
     else :
         return net['post'].take(v,axis=1).getA1().nonzero()[0]
 
 def reversed_net(net):
-    return np.matrix(net, dtype=[('post', 'uint'), ('pre', 'uint')])
+    dtype = net.dtype
+    dtype.names = ['post', 'pre']
+    return np.matrix(net, dtype=dtype)
 
 #soit t, un array qui contient les index des transitions
 
