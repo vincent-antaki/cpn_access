@@ -2,6 +2,7 @@ import unittest
 import numpy as np
 from nose.tools import set_trace 
 from algorithms import *
+from petrinet import *
 
 class FireableTest(unittest.TestCase):
     def setUp(self):
@@ -28,9 +29,9 @@ class ReachableTest(unittest.TestCase):
 
     def setUp(self):
         self.a = np.matrix(
-               [((1,0), (1,3), (0,1), (1,0)),
-                ((1,1), (2,0), (0,0), (0,0)),
-                ((0,0), (0,1), (1,0), (0,1))],
+               [[(1,0), (1,3), (0,1), (1,0)],
+                [(1,1), (2,0), (0,0), (0,0)],
+                [(0,0), (0,1), (1,0), (0,1)]],
         dtype=[('pre', 'uint'), ('post', 'uint')])
 
     def test_reachable(self):
@@ -38,9 +39,9 @@ class ReachableTest(unittest.TestCase):
         m = np.array((3, 5, 3)) 
         #set_trace()
         
-        #z = reachable(self.a, m0, m) 
-        
-        #self.assertTrue(np.array_equiv((self.a.incidenceMatrix()*[[2],[1],[2],[1]]).getA1(), m - m0))
+        z = reachable(self.a, m0, m) 
+        #print(z)
+        self.assertTrue(np.array_equiv((incident(self.a)*[[2],[1],[2],[1]]).getA1(), m - m0))
         #valid path from m0 to m : [1,0,2,3,2,0]. associated Parikh image : [2,1,2,1]
         
 #last = list(apply_transition(n, c, t))[-1]        

@@ -1,7 +1,7 @@
 import numpy as np
 
 def incident(net):
-    return net['post'] - net['pre']
+    return np.matrix(net['post'], dtype='int64') - np.matrix(net['pre'], dtype='int64')
 
 #v is the an orderedlist of index of a transitions or a places
 #if place is True, fonction returns an ordered list of indexes v's input transitions (nonzero output transitions) indexes
@@ -43,10 +43,10 @@ def subnet(net, t, subplaces = False):
     else :
         return net.take(t, axis=1)
 
-petrinet = np.matrix([
-         [(2, 0), (0, 0), (3, 8), (1, 2), (0,37)],
-         [(0, 3), (1, 3), (5, 0), (5, 2), (23,0)]],
-         dtype=[('pre', 'uint'), ('post', 'uint')])
+#petrinet = np.matrix([
+ #        [(2, 0), (0, 0), (3, 8), (1, 2), (0,37)],
+#         [(0, 3), (1, 3), (5, 0), (5, 2), (23,0)]],
+#         dtype=[('pre', 'uint'), ('post', 'uint')])
 
 #print("net:", petrinet)
 #print("preset:", preset(petrinet, [2]))

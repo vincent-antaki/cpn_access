@@ -13,14 +13,14 @@ def maxFS(n, m):
 
 #takes in input :
 #n, a petriNet instance; 
-#m, a numpy array representing an initial marking; 
+#m0, a numpy array representing an initial marking; 
 #t1, an array of ordered index representing a subset of transitions of n 
 #
-def fireable(n, m, t1):
+def fireable(n, m0, t1):
     set_trace()
-    t2,p = np.empty((0,)), m.nonzero()[0]
+    t2,p = np.empty((0,)), m0.nonzero()[0]
     t1 = np.array(t1)
-    assert n.shape[0] == m.shape[0]
+    assert n.shape[0] == m0.shape[0]
 
     while np.setdiff1d(t1,t2).size != 0: 
         new = False
@@ -84,7 +84,7 @@ def reachable(n, m0, m, limreach=False):
         t1 = np.intersect1d(t1, maxFS(sub, m0.take(subplaces)),assume_unique=True)
 
         if limreach:
-            t1 = np.insersect1d(t1, maxFS(sub, m.take(subplaces)),assume_unique=True)
+            t1 = np.insersect1d(t1, maxFS(sub.reverseNet, m.take(subplaces)),assume_unique=True)
 
         if t1 == sol.nonzero() : 
             return sol
