@@ -42,6 +42,29 @@ class ReachableTest(unittest.TestCase):
         self.assertTrue(np.array_equiv((pn.incident(self.a)*[[2],[1],[2],[1]]).getA1(), m - m0))
         #valid path from m0 to m : [1,0,2,3,2,0]. associated Parikh image : [2,1,2,1]
 
+
+class LimReachTest(unittest.TestCase):
+    def setUp(self):
+        #a and b have the same incidence matrix but not the same reachable spaces
+        #example took from On Reachability in Continuous Petri Net Systems by Julvez, Recalde and Silva
+        self.a = np.matrix(
+               [[(1,0), (0,1)],
+                [(0,1), (1,0)]],
+        dtype=[('pre', 'uint'), ('post', 'uint')])
+
+        self.b = np.matrix(
+               [[(2,1), (0,1)],
+                [(0,1), (2,1)]],
+        dtype=[('pre', 'uint'), ('post', 'uint')])
+
+    def test_lim_difference(self):
+        m0 = np.array([2,0])
+        m = np.array([0,2])
+        self.assertTrue(not reachable(self.b,m0,m))
+        self.assertTrue(reachable(self.a,m0,m))
+        self.assertTrue(reachable(self.b,m0,m),limreach=True)
+
+
 #last = list(apply_transition(n, c, t))[-1]
 #for config in apply_transition(net, config_init, trans):
  #   print config
