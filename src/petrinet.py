@@ -1,5 +1,5 @@
 import numpy as np
-
+from copy import deepcopy
 """
 In this document, Petri nets are reprensed by instances of numpy.matrix
 
@@ -73,12 +73,14 @@ def postset(net, v, place=False) :
         return np.unique(net['pre'][v].nonzero()[1].getA1())
     else :
         return np.unique(net['post'].take(v,axis=1).nonzero()[0].getA1())
-
+ 
 def reversed_net(net):
-    dtype = net.dtype
-    dtype.names = ['post', 'pre']
-    return np.matrix(net, dtype=dtype)
-
+    dtype = deepcopy(net.dtype)
+    dtype.names = net.dtype.names[::-1]
+    rev = np.matrix(net, copy=True)
+    rev.dtype = dtype
+    return rev
+    
 def subnet(net, t, subplaces = False):
     """
     This function returns a copy of the cpn-system net but with only a subset of its transitions and, if subplaces == true, a subset of its places.

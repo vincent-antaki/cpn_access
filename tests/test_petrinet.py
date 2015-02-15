@@ -13,8 +13,10 @@ class TestReversed(unittest.TestCase):
 
         # reversed pre and post
         self.assertTrue(np.array_equal([[2, 4]], rev['pre']))
+        self.assertTrue(np.array_equal([[2, 4]], net['post']))
         self.assertTrue(np.array_equal([[1, 3]], rev['post']))
-
+        self.assertTrue(np.array_equal([[1, 3]], net['pre']))
+        
 class TestPreset(unittest.TestCase):
     def setUp(self):
         self.net = np.matrix([[(2, 0), (0, 0), (3, 8), (1, 2), (0,37), (0,0)],

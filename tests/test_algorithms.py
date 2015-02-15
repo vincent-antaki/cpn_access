@@ -36,10 +36,17 @@ class ReachableTest(unittest.TestCase):
         m0 = np.array((2, 7, 3))
         m = np.array((3, 5, 3))
         #set_trace()
-
+        print(self.a,self.a.dtype)
         z = reachable(self.a, m0, m)
-        #print(z)
-        self.assertTrue(np.array_equiv((pn.incident(self.a)*[[2],[1],[2],[1]]).getA1(), m - m0))
+        print(np.transpose(z))
+        print(self.a,self.a.dtype)
+        print("z : ", z)
+        print(m0, "<- m0 . m ->", m)
+        print("a incident :", pn.incident(self.a))
+        print("numpy array :",(pn.incident(self.a)*np.array([[2],[1],[1],[0]])).getA1())
+        print("normal array",(pn.incident(self.a)*[[2],[1],[1],[0]]).getA1())
+        print("difference :",m - m0)
+        self.assertTrue(np.array_equiv((pn.incident(self.a)*[[2],[1],[1],[0]]).getA1(), m - m0))
         #valid path from m0 to m : [1,0,2,3,2,0]. associated Parikh image : [2,1,2,1]
 
 

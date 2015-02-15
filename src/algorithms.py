@@ -1,6 +1,7 @@
 from scipy import optimize
 from petrinet import *
 import numpy as np
+from nose.tools import set_trace
 """
 Algorithms from : 
 
@@ -54,7 +55,6 @@ def reachable(net, m0, m, limreach=False):
         sol : False if not reachable, else returns Parikh Image of solution, represented by a 1d numpy array.
         
     """
-
     n1, n2   = net.shape
 
     assert len(m) == n1 and n1 == len(m0)
@@ -62,7 +62,7 @@ def reachable(net, m0, m, limreach=False):
     if (m == m0).all() : 
         return (True,0)
         
-    t1 = np.array(range(0,n2)) #initialy, t1 represents all the transitions of the petri net n
+    t1 = np.array(range(0,n2)) #initialy, t1 represents all the transitions of the Petri net system
     b_eq = np.array(m - m0)
     
     while t1.size != 0:
@@ -75,11 +75,17 @@ def reachable(net, m0, m, limreach=False):
             #Callback function, will be use to stop the simplex when it has a valid solution with xk[t] > 0
             def strict_positive_t(xk, **kwargs) :
                  if kwargs["phase"] == 2 and xk[t] > 0 :
+                     print("Found solution :",xk)
                      raise FoundSolution(xk)
 
             try :
                 #http://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.linprog.html
-                #solve (exist v | v>=0 and C_{PxT1}v = m - m0) 
+                #solve (exist v | v>=0 and C_{PxT1}v = m - m0)
+                print(objective_vector)
+                print(None)
+                print(A_eq)
+                print(None) 
+                print(b_eq) 
                 result = optimize.linprog(objective_vector, None, None, A_eq, b_eq, callback = strict_positive_t)
 
             except FoundSolution as f :
