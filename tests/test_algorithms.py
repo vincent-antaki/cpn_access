@@ -36,18 +36,23 @@ class ReachableTest(unittest.TestCase):
         m0 = np.array((2, 7, 3))
         m = np.array((3, 5, 3))
         #set_trace()
-        print(self.a,self.a.dtype)
-        z = reachable(self.a, m0, m)
+        result = reachable(self.a, m0, m)
+        expected_result = np.array([[2],[1],[1],[0]])
+        #valid path from m0 to m : [1,0,2,0]. associated Parikh image : [2,1,1,0]
+        z = result[np.newaxis].transpose()
+        print(self.a,self.a.dtype)        
         print(np.transpose(z))
         print(self.a,self.a.dtype)
-        print("z : ", z)
+        print("result :", result, "z : ", z)
         print(m0, "<- m0 . m ->", m)
         print("a incident :", pn.incident(self.a))
-        print("numpy array :",(pn.incident(self.a)*np.array([[2],[1],[1],[0]])).getA1())
-        print("normal array",(pn.incident(self.a)*[[2],[1],[1],[0]]).getA1())
+        print("numpy array :",(pn.incident(self.a)*expected_result).getA1())
+        print("normal array",(pn.incident(self.a)*z).getA1())
         print("difference :",m - m0)
+        self.assertTrue(np.array_equiv(z,expected_result))
         self.assertTrue(np.array_equiv((pn.incident(self.a)*[[2],[1],[1],[0]]).getA1(), m - m0))
-        #valid path from m0 to m : [1,0,2,3,2,0]. associated Parikh image : [2,1,2,1]
+        self.assertTrue(np.array_equiv((pn.incident(self.a)*z).getA1(), m - m0))
+
 
 
 class LimReachTest(unittest.TestCase):

@@ -74,22 +74,20 @@ def reachable(net, m0, m, limreach=False):
             
             #Callback function, will be use to stop the simplex when it has a valid solution with xk[t] > 0
             def strict_positive_t(xk, **kwargs) :
-                 if kwargs["phase"] == 2 and xk[t] > 0 :
-                     print("Found solution :",xk)
-                     raise FoundSolution(xk)
+
+                if kwargs["phase"] == 2 and xk[t] > 0 :
+                    print("Found solution :",xk)
+                    raise FoundSolution(xk)
 
             try :
                 #http://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.linprog.html
                 #solve (exist v | v>=0 and C_{PxT1}v = m - m0)
-                print(objective_vector)
-                print(None)
-                print(A_eq)
-                print(None) 
-                print(b_eq) 
+
                 result = optimize.linprog(objective_vector, None, None, A_eq, b_eq, callback = strict_positive_t)
 
             except FoundSolution as f :
                 nbsol += 1
+                assert len(sol) == len(f.solution)
                 sol += f.solution
                 break
 
