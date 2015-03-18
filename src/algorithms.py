@@ -2,8 +2,7 @@ from scipy import optimize
 from petrinet import *
 import numpy as np
 from fractions import Fraction
-from decimals import Decimal
-from nose.tools import set_trace
+import qsoptex
 
 """
 Fireable and Reachable algorithms from : 
@@ -44,7 +43,7 @@ def maxFS(net, m):
     return fireable(net,m,range(0,net.shape[1]))[1]    
     
     
-def reachable(net, m0, m, limreach=False, options = False):
+def reachable(net, m0, m, limreach=False, **options):
     """
     Reachable algorithm from [FH13] - Section 4
 
@@ -62,10 +61,10 @@ def reachable(net, m0, m, limreach=False, options = False):
         sol : False if not reachable, else returns Parikh Image of solution, represented by a 1d numpy array.
         
     """
-    opts = {'diagnosis':True,'proofcheck':False,'callback':False}
-    if options :
-        for x in options.key:
-            opts[x] = options[x]
+    opts = {'method':'QSopt_ex','diagnosis':True,'proofcheck':False,'callback':False}
+    
+    for x in options.keys():
+        opts[x] = options[x]
     n1, n2   = net.shape
 
     assert len(m) == n1 and n1 == len(m0)
@@ -82,44 +81,50 @@ def reachable(net, m0, m, limreach=False, options = False):
 
         for t in t1:
             objective_vector = [objective(t,x) for x in range(0,l)]
-            
-            if opts['callback'] :
-            
-                #Callback function, will be use to stop the simplex when it has a valid solution with xk[t] > 0
-                def strict_positive_t(xk, **kwargs) :
-                    print("strictpositive fct : xk = ",xk, xk[t]>0)
-                    print(kwargs)
-                    if kwargs["phase"] == 2 and xk[t] > 0 :
-                        print("Found solution :",xk)
-                        raise FoundSolution(xk)
+            print(t1, None)
+            print(t)
+            print(objective_vector)
+            print(None)
+            print(A_eq)
+            print(None) 
+            print(b_eq)
 
-                try :
-                    #http://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.linprog.html
-                    #solve (exist v | v>=0 and C_{PxT1}v = m - m0)                          
-                    print(t1, None)
-                    print(t)
-                    print(objective_vector)
-                    print(None)
-                    print(A_eq)
-                    print(None) 
-                    print(b_eq)                     
-                    result = optimize.linprog(objective_vector, None, None, A_eq, b_eq, callback = strict_positive_t)
-                    
-                except FoundSolution as f :
-                    nbsol += 1
-                    sol += f.solution
-                    break                    
-            else :
-                    result = optimize.linprog(objective_vector, None, None, A_eq, b_eq)
-                    if (result.status == 0 or result.status == 3) and result.x[t]>0:
+            if opts['method'] == 'Scipy' :
+            
+                if opts['callback'] :
+                
+                    #Callback function, will be use to stop the simplex when it has a valid solution with xk[t] > 0
+                    def strict_positive_t(xk, **kwargs) :
+                        print("strictpositive fct : xk = ",xk, xk[t]>0)
+                        print(kwargs)
+                        if kwargs["phase"] == 2 and xk[t] > 0 :
+                            print("Found solution and aborted the rest of the simplex :",xk)
+                            raise FoundSolution(xk)
+
+                    try :
+                        #http://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.linprog.html
+                        #solve (exist v | v>=0 and C_{PxT1}v = m - m0)                                               
+                        result = optimize.linprog(objective_vector, None, None, A_eq, b_eq, callback = strict_positive_t)
+                        
+                    except FoundSolution as f :
                         nbsol += 1
-                        sol += result.x
-                    
+                        sol += f.solution
+                        break                    
+                else :
+                        result = optimize.linprog(objective_vector, None, None, A_eq, b_eq)
+                        if (result.status == 0 or result.status == 3) and result.x[t]>0: ##inclure les unbounds??
+                            nbsol += 1
+                            sol += result.x
+            
+            elif opts['method']=='QSopt_ex' :
+                result = solve_with_qsopt(objective_vector, A_eq, b_eq)
+                        
             print("result for t=",t," :",result)
 
             if opts['proofcheck'] and (result.status == 3 or (result.status == 0 and result.x[t]>0)):
                 #symbolic computaion here
-                pass
+                check = np.array_equiv(np.dot(A_eq,result.x[np.newaxis].transpose()).getA1(), b_eq)
+
             
             elif opts['diagnosis'] and (result.status == 2 or (result.status == 0 and result.x[t]==0)) :
                 check = None
@@ -185,4 +190,47 @@ def objective(t,x):
 class FoundSolution(Exception):
     def __init__(self, solution):
         self.solution = solution
+
+class Bunch:
+    def __init__(self, **kwds):
+        self.__dict__.update(kwds)
+
+    def __str__(self):
+        return str(self.__dict__)
+
+def solve_with_qsopt(c, A_eq, b_eq):
+    assert A_eq.shape[0] == b_eq.size
+
+    p = qsoptex.ExactProblem()
+    i = 0
+    names = []
+    for x in c:
+        names.append(bytes("var-"+str(i), 'ascii'))
+        p.add_variable(name=names[i],objective=x,lower=0)
+        i += 1
+
+    for index, line in enumerate(A_eq) :
+        d = {}#dictionnary representing the constraint
+        print(line)
+        for x in range(0,i):
+            #d[names[x]] = int(line.getA1()[x])
+            d[x] = int(line.getA1()[x])
+
+        print(*map(type,[d,b_eq[index]]))
+        p.add_linear_constraint(qsoptex.ConstraintSense.EQUAL, d, int(b_eq[index]))
+                    
+    p.set_objective_sense(qsoptex.ObjectiveSense.MINIMIZE)
+    p.set_param(qsoptex.Parameter.SIMPLEX_DISPLAY, 0)
+    p.set_param(qsoptex.Parameter.SIMPLEX_MAX_ITERATIONS,1)
+
+    result = Bunch(status=p.solve(),x=[])
+
+    print("Status :",result.status)    
+ #   print("objective:",p.get_objective_value())
+        
+    for j in range(0,i):
+        result.x.append(p.get_value(j))
+        print(names[j]," : ",result.x[-1])
+  
+    return result
 
