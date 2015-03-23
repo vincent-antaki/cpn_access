@@ -108,13 +108,8 @@ class UnreachableTest(unittest.TestCase):
     def test_reachable(self):
         m0 = np.array((2, 7, 3))
         m = np.array((0, 0, 0))
-        #set_trace()
         result = reachable(self.a, m0, m)
-        expected_result = False
-        print(m0, "<- m0 . m ->", m)
-        print("difference :",m - m0)
-        self.assertTrue(np.array_equiv(z,expected_result))
-        self.assertTrue(False)
+        self.assertTrue(result is False)
 
 class LimReachTest(unittest.TestCase):
     def setUp(self):
@@ -133,10 +128,14 @@ class LimReachTest(unittest.TestCase):
     def test_lim_difference(self):
         m0 = np.array([2,0])
         m = np.array([0,2])
+        z = reachable(self.b,m0,m)
+        print("not suppose to be reached",z)
         self.assertTrue(not reachable(self.b,m0,m))
-        self.assertTrue(reachable(self.a,m0,m))
-        self.assertTrue(reachable(self.b,m0,m),limreach=True)
-
+        z = reachable(self.a,m0,m)
+        self.assertIsInstance(z,np.ndarray)
+        z = reachable(self.a, m0, m, limreach=True)
+        self.assertIsInstance(z, np.ndarray)
+        
 
 #last = list(apply_transition(n, c, t))[-1]
 #for config in apply_transition(net, config_init, trans):

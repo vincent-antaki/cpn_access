@@ -1,3 +1,4 @@
+import itertools
 import numpy as np
 from copy import deepcopy
 """
@@ -99,10 +100,10 @@ def subnet(net, t, subplaces = False):
 
     """
     assert (all(x >= 0) and all(x < net['post'].shape[1]) for x in t)
-
+        
     if subplaces == True:
         subplaces = np.union1d(preset(net,t),postset(net,t))
         #subplaces = list(set(np.concatenate([preset(net, x) for x in t])).union(set(np.concatenate([postset(net, x) for x in t]))))
-        return net.take(t, axis=0).take(subplaces, axis=1), subplaces
+        return net.take(t, axis=1).take(subplaces, axis=0), subplaces
     else :
         return net.take(t, axis=1)
