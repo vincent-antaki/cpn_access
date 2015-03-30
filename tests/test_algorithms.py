@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 import unittest
 import numpy as np
 import petrinet as pn
@@ -19,8 +21,6 @@ class FireableTest(unittest.TestCase):
     def test_a(self):
         self.assertTrue(fireable(self.a, np.array((2, 7, 3)), np.array((0,1)))[0])
         self.assertTrue(fireable(self.a, np.array((2, 7, 3)), np.array((3)))[0])
-        #set_trace()
-        pass
 
         self.assertTrue(np.array_equal(fireable(self.a, np.array((2, 0, 1)), np.array([3]))[1],np.array([])))
         self.assertTrue(np.array_equal(fireable(self.a, np.array((1, 0, 3)), np.array([2,3]))[1],np.array([2])))

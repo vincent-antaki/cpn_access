@@ -1,9 +1,12 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 from scipy import optimize
 from petrinet import *
 import numpy as np
 import collections
 from fractions import Fraction
 import qsoptex
+import math
 
 
 
@@ -67,7 +70,7 @@ def reachable(net, m0, m, limreach=False, **options):
         sol : False if not reachable, else returns Parikh Image of solution, represented by a 1d numpy array.
         
     """
-    opts = {'method':'QSopt_ex','diagnosis':False,'proofcheck':True,'callback':False}
+    opts = {'method': None,'diagnosis':False,'proofcheck':True,'callback':False}
     for x in options.keys():
         opts[x] = options[x]
     n1, n2   = net.shape
@@ -90,7 +93,7 @@ def reachable(net, m0, m, limreach=False, **options):
             result = None
             check = None
             
-            if opts['method'] == 'Scipy' :
+            if opts['method'] == 'Scipy' or opts['method'] == None:
            
                 if opts['callback'] :
                     result = solve_lineprog_with_callback(objective_vector, A_eq, b_eq,lambda x : x[t] >0)
@@ -131,7 +134,7 @@ def reachable(net, m0, m, limreach=False, **options):
                         check = solve_linprog(objective_vector, A_eq.transpose(), [0 for i in range(0,l)])
                     print("Check done. \n",check)
                     
-            if opts['method']=='QSopt_ex' :
+            if opts['method']=='QSopt_ex' or (opts['method'] == None and result == None):
                 print("Solving with QSpot_ex...")
                 result = solve_qsopt(objective_vector, A_eq, b_eq, t)
                 if result is not None :
@@ -187,7 +190,14 @@ def cutFloat(x) :
     if isinstance(x, collections.Iterable):
         r = []
         for i in x :
-            r.append(Fraction(i).limit_denominator(10000 * int(math.log10(i))))
+            if i != 0 :
+               denom = 10000 * math.ceil(math.log10(i))
+               if denom >= 1 :
+                   r.append(Fraction(i).limit_denominator(denom))
+               else :
+                   r.append(Fraction(i).limit_denominator(10000))
+            else :
+                r.append(Fraction(0))
         return np.array(r)
 
 class FoundSolution(Exception):
@@ -211,10 +221,11 @@ def solve_nnls(A, b):
 
 def solve_linprog(c, A, b, t):
     """Solve using the Scipy.optimize.linprog's simplex algorithm"""
-    result = optimize.linprog(objective_vector, None, None, A_eq, b_eq)
+    result = optimize.linprog(c, None, None, A, b)
     if result.status == 0 and result.x[t]>0: #result is optimal and not bounded
-        return result.x
-    elif result.status == 3 : #unbounded
+        return result
+    elif result.status == 3 : #unbounded    
+        return result
         pass
     else : #Infeasable?
         return None

@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 import unittest
 import numpy as np
 import petrinet as pn

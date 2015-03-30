@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 import petrinet as pn
 from algorithms import reachable, fireable
 import numpy as np
