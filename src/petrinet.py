@@ -4,14 +4,14 @@ import itertools
 import numpy as np
 from copy import deepcopy
 """
-In this document, Petri nets are reprensed by instances of numpy.matrix
+In this document, Petri nets are represented by instances of numpy.ndarray
 
-for general documentation on numpy-matrix and numpy.recarray
+for general documentation on numpy.recarray
 
 http://docs.scipy.org/doc/numpy/reference/generated/numpy.recarray.html
 http://docs.scipy.org/doc/numpy/reference/generated/numpy.core.records.fromrecords.html
-
-petrinet = np.matrix([[(2, 0), (0, 0), (3, 8), (1, 2), (0,37)],
+>>> import numpy as np
+>>> petrinet = np.matrix([[(2, 0), (0, 0), (3, 8), (1, 2), (0,37)],
                       [(0, 3), (1, 3), (5, 0), (5, 2), (23,0)]],
                       dtype=[('pre', 'uint'), ('post', 'uint')]) 
 
@@ -53,7 +53,7 @@ def incident(net):
 
 def preset(net, v, place=False):
     """
-    v is an orderedlist of index of transitions or places
+    v is an ordered list of index of transitions or places
     if place is True : input is a place index 
                        fonction returns an ordered list of v's input transitions indexes
     else : input is a transition index, 
@@ -78,6 +78,11 @@ def postset(net, v, place=False) :
         return np.unique(net['post'].take(v,axis=1).nonzero()[0].getA1())
  
 def reversed_net(net):
+    """
+    return a copy of the net but with the 'pre' and the 'post' label are inversed. Which conceptually gives a cpn with opposition flow. 
+        i.e. net.dtype = ['pre':'unint','post':'unint']
+             rev.dtype = ['post':'unint','pre':'unint']
+    """
     dtype = deepcopy(net.dtype)
     dtype.names = net.dtype.names[::-1]
     rev = np.matrix(net, copy=True)
@@ -90,7 +95,7 @@ def subnet(net, t, subplaces = False):
 
     Inputs :    
         net : a CPN system, represented by a numpy.matrix
-        t : a subset of index of the variable net
+        t : an ordered list of index of the variable net
         subplaces : if true, the returned net will only have the places that are in the preset or postset of a transition in t.
                     else, will keep all places.
                     
