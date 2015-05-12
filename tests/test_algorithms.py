@@ -79,7 +79,7 @@ class LimReachTest(unittest.TestCase):
 
         z = reachable(self.a,m0,m)
         self.assertIsInstance(z,np.ndarray)
-        z = reachable(self.b, m0, m, limreach=True)
+        z = reachable(self.a, m0, m, limreach=True)
         self.assertIsInstance(z, np.ndarray)
                 
         z = reachable(self.b,m0,m)
