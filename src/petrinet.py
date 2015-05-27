@@ -59,10 +59,16 @@ def preset(net, v, place=False):
     else : input is a transition index, 
            fonction returns an ordered list of v's input places indexes
     """
+    a = None
     if place:
-        return np.unique(net['post'][v].nonzero()[1].getA1())
+        a = net['post'][v].nonzero()[1]
     else :
-        return np.unique(net['pre'].take(v,axis=1).nonzero()[0].getA1())
+        a = net['pre'].take(v,axis=1).nonzero()[0]    
+
+    if type(a) == np.matrix :
+        return np.unique(a.getA1())
+    else : #type(a) == np.array or type(a)== np.rec.array 
+        return np.unique(a)
 
 def postset(net, v, place=False) :
     """
@@ -72,16 +78,23 @@ def postset(net, v, place=False) :
     else : input is a transition index, 
            fonction returns an ordered list of v's output places indexes
     """
+    a = None
     if place:
-        return np.unique(net['pre'][v].nonzero()[1].getA1())
+        a = net['pre'][v].nonzero()[1]
     else :
-        return np.unique(net['post'].take(v,axis=1).nonzero()[0].getA1())
+        a = net['post'].take(v,axis=1).nonzero()[0]
+
+    if type(a) == np.matrix :
+        return np.unique(a.getA1())
+    else : #type(a) == np.array or type(a)== np.rec.array 
+        return np.unique(a)
+
  
 def reversed_net(net):
     """
     return a copy of the net but with the 'pre' and the 'post' label are inversed. Which conceptually gives a cpn with opposition flow. 
-        i.e. net.dtype = ['pre':'unint','post':'unint']
-             rev.dtype = ['post':'unint','pre':'unint']
+        i.e. net.dtype = ['pre':'uint','post':'uint']
+             rev.dtype = ['post':'uint','pre':'uint']
     """
     dtype = deepcopy(net.dtype)
     dtype.names = net.dtype.names[::-1]

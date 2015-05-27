@@ -15,6 +15,9 @@ a = np.matrix(
                 [(0,0), (0,1), (1,0), (0,1)]],
         dtype=[('pre', 'uint'), ('post', 'uint')])
 
+m0 = np.array([2,5,7])
+m = np.array([1,5,8])
+
 #print("net:", petrinet)
 #print("preset:", pn.preset(petrinet, [2]))
 #print("postset:", pn.postset(petrinet, [1]))

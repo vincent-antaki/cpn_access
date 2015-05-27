@@ -45,15 +45,7 @@ class ReachableTest(unittest.TestCase):
         self.assertTrue(np.array_equiv((pn.incident(self.a)*[[2],[1],[1],[0]]).getA1(), m - m0))
         self.assertTrue(np.array_equiv(np.dot(pn.incident(self.a),z).getA1(), m - m0))
 
-class UnreachableTest(unittest.TestCase):
-    def setUp(self):
-        self.a = np.matrix(
-               [[(1,0), (1,3), (0,1), (1,0)],
-                [(1,1), (2,1), (0,0), (0,0)],
-                [(0,0), (0,1), (1,0), (0,1)]],
-        dtype=[('pre', 'uint'), ('post', 'uint')])
-
-    def test_reachable(self):
+    def test_unreachable(self):
         m0 = np.array((2, 7, 3))
         m = np.array((0, 0, 0))
         result = reachable(self.a, m0, m)
@@ -87,4 +79,18 @@ class LimReachTest(unittest.TestCase):
         z = reachable(self.b, m0, m, limreach=True)
         self.assertIsInstance(z, np.ndarray)
         
-
+class RecArrayLimReachTest(LimReachTest):
+    def setUp(self):
+        LimReachTest.setUp(self)
+        self.a = np.rec.array(self.a)
+        self.b = np.rec.array(self.b)
+        print(self.a)
+        print(self.b)
+        
+class RecArrayReachableTest(LimReachTest):
+    def setUp(self):
+        LimReachTest.setUp(self)
+        self.a = np.rec.array(self.a)
+        self.b = np.rec.array(self.b)
+        print(self.a)
+        print(self.b)        
