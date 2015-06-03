@@ -18,35 +18,35 @@ class Benchmark_Solver(benchmark.Benchmark):
     def test_very_small_set(self):
         print("verysmall ", self.solver)
         for net,m0,m in self.testsets['verysmall']:
-            print(reachable(net,m0,m,self.solver))   
+            print(reachable(net,m0,m,solver=self.solver))   
 
     def test_small_set(self):
         print("small ", self.solver)
         for net,m0,m in self.testsets['small']:
-            print(reachable(net,m0,m,self.solver))  
+            print(reachable(net,m0,m,solver=self.solver))  
  
     def test_medium_set(self):
         print("medium ", self.solver)
         for net,m0,m in self.testsets['medium']:
-            print(reachable(net,m0,m,self.solver))  
+            print(reachable(net,m0,m,solver=self.solver))  
 #            pass
               
     def test_big_set(self):
         print("big ", self.solver)
         for net,m0,m in self.testsets['big']:
-            print(reachable(net,m0,m,self.solver))  
+            print(reachable(net,m0,m,solver=self.solver))  
 #            pass
 
     def test_huge_set(self):
         print("huge ", self.solver)
         for net,m0,m in self.testsets['huge']:
-            print(reachable(net,m0,m,self.solver))  
+            print(reachable(net,m0,m,solver=self.solver))  
             pass
             
     def test_gigantic_set(self):
         print("gigantic ", self.solver)
         for net,m0,m in self.testsets['gigantic']:
-            print(reachable(net,m0,m,self.solver))  
+           # print(reachable(net,m0,m,solver=self.solver))  
             pass
             
 class Benchmark_z3(Benchmark_Solver):

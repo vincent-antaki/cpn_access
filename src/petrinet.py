@@ -49,7 +49,7 @@ matrix([[(3, 8)],
 
 """
 def incident(net):
-    return np.matrix(net['post'], dtype='int64') - np.matrix(net['pre'], dtype='int64')
+    return np.matrix(net['post'], dtype=np.int) - np.matrix(net['pre'], dtype=np.int)
 
 def preset(net, v, place=False):
     """

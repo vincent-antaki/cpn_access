@@ -27,8 +27,7 @@ def fireable(net, m, t1):
                 
     """
     assert net.shape[0] == m.shape[0]
-    t2,p = np.empty((0,)), m.nonzero()[0]
-    
+    t2,p = np.empty((0,),dtype=np.int), m.nonzero()[0]
     while np.setdiff1d(t1,t2).size != 0:
         new = False
         for t in np.setdiff1d(t1,t2) :
@@ -45,7 +44,7 @@ def maxFS(net, m):
 #    return fireable(net,m,np.zeros((1,net.shape[1])))[1]    
     
     
-def reachable(net, m0, m, limreach=False, maxiter=2000, solver='qsopt-ex'):
+def reachable(net, m0, m, limreach=False, solver='qsopt-ex'):
     """
     Reachable algorithm from [FH13] - Section 4
 
@@ -63,7 +62,7 @@ def reachable(net, m0, m, limreach=False, maxiter=2000, solver='qsopt-ex'):
     assert len(m) == n1 and n1 == len(m0)
     
     #initialy, t1 represents all the transitions of the Petri net system
-    t1 = np.array(range(0,n2))
+    t1 = np.arange(n2,dtype=np.int)
 
     if np.array_equiv(m,m0) : 
         return [0 for x in t1] 
@@ -84,6 +83,11 @@ def reachable(net, m0, m, limreach=False, maxiter=2000, solver='qsopt-ex'):
                 result=solve_GLPK(A_eq, b_eq, t)
             elif solver=='z3':
                 result=solve_z3(A_eq, b_eq, t)
+            elif solver=='scipy':
+                try :
+                    result=solve_scipy(A_eq, b_eq, t)    
+                except FoundSolution as f :
+                    pass
             else :
                 raise Exception("No valid solver given")
                     
@@ -129,10 +133,14 @@ def minus_one_if_equal(t,x):
     if t == x : return -1
     else : return 0
 
+def if_equal(a, b, true_value, default_value):
+    if a == b : return true_value
+    else : return default_value
+
 def one_if_equal(t,x):
     if t == x : return 1
     else : return 0
-qwe = 0
+
 #e is the index of the strict probability constraint.
 def solve_qsopt(A, b, e):
     import qsoptex
@@ -262,7 +270,44 @@ def solve_z3(A_eq, b_eq, t):
         return Bunch(x=r,status='feasable')
     else :
         print("No solution found")
-        return Bunch(status='infeasable')
+        return Bunch(status='infeasible')
+
+def solve_linprog(A_eq, b_eq, t):
+    """Solve using the Scipy.optimize.linprog's simplex algorithm"""
+    result = optimize.linprog(c, None, None, A, b)
+    if result.status == 0 and result.x[t]>0: #result is optimal and not bounded
+        return result
+    elif result.status == 3 : #unbounded    
+        return result
+        pass
+    else : #Infeasable?
+        return None
+    
+## You need to upgrade to scipy >=0.16.0 for it to work    
+def solve_scipy(A_eq, b_eq, t):
+    """Solve using the Scipy.optimize.linprog's simplex algorithm and cuting second-step with callback function"""
+    import scipy.optimize as opt
+    #Callback function, will be use to stop the simplex when it has a valid solution respecting strict constraint
+    def cut_callback(xk, **kwargs) :
+        print("strictpositive fct : xk = ",xk, xk[t]>0)
+        print(kwargs)
+        if kwargs["phase"] == 2 and xk[t]>0 :
+#            x = calculate_vector_from_basis()
+            
+            print("Found solution and aborted the rest of the simplex :",xk)
+            raise FoundSolution(xk)
+
+    try :
+        #http://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.linprog.html
+        #solve (exist v | v>=0 and C_{PxT1}v = m -m0)                                               
+        result = opt.linprog([if_equal(t,x,1,0) for x in range(0,A_eq.shape[1])], None, None, A_eq, b_eq, callback = cut_callback)        
+    except FoundSolution as f :
+        #x = confirme here that the result is valid 
+        return Bunch(status='feasable',x=f.solution)
+        
+    #assert with Farkas here    
+    return Bunch(status='infeasable',x=None) 
+
 
 def solve_stp(A_eq, b_eq, t):    
     pass
