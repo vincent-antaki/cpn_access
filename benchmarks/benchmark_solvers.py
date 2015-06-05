@@ -1,10 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
-from algorithms import *
-
 import benchmark
-from generate_pn import *
 import math
 import re #regex
 
@@ -16,28 +12,30 @@ class Benchmark_Solver(benchmark.Benchmark):
     def setUp(self):
         self.solver='qsopt-ex'        
             
-class Benchmark_z3(Benchmark_Solver):
-    def setUp(self):
-        self.solver = 'z3'
+#class Benchmark_z3(Benchmark_Solver):
+#    def setUp(self):
+#        self.solver = 'z3'
 
 
 if __name__ == '__main__':
     if __package__ is None:
-        print("a")
+  
         import sys
         from os import path
-        sys.path.append(path.dirname( path.abspath(__file__)) )
-        print(__package__)
-        from ..pnml import pnmlparser 
-        
+        sys.path.append(path.join(path.dirname(__file__), '..', 'src'))
+        sys.path.append(path.join(path.dirname(__file__), '..', 'pnml'))
+        import pnmlparser 
+        from generate_pn import getM
+        from algorithms import reachable
     pnmlregex = re.compile(".*\.pnml")
     args = sys.argv
-    
-    for arg in args[2:]:
+    print(args)
+    for arg in args[1:]:
         if pnmlregex.match(arg) :
             #parsepnml
-            pnml = parse_pnml(arg)
-            setattr(Benchmark_Solver,"test_"+pnml.name, lambda self:reachable(pnml.net,self.m0,getM(pnml.net)))
+            pnml = pnmlparser.parse(arg)
+            
+            setattr(Benchmark_Solver,"test_"+pnml.name, lambda self:reachable(pnml.net,pnml.initialmarking,getM(pnml.net.shape[0]),solver=self.solver))
             
         else :
             print("Not a pnml")     

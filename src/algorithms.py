@@ -4,7 +4,7 @@ from petrinet import *
 import numpy as np
 from fractions import Fraction
 
-verbose = True
+verbose = False
 
 """
 Fireable and Reachable algorithms from : 
