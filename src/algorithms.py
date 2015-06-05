@@ -4,7 +4,7 @@ from petrinet import *
 import numpy as np
 from fractions import Fraction
 
-verbose = True
+verbose = False
 
 """
 Fireable and Reachable algorithms from : 
@@ -40,9 +40,7 @@ def maxFS(net, m):
     """
     Calls Fireable with all the transitions of the net. Returns only t2 (the maximal firing set)
     """
-    return fireable(net,m, np.array(range(0,net.shape[1])))[1]    
-#    return fireable(net,m,np.zeros((1,net.shape[1])))[1]    
-    
+    return fireable(net,m, np.array(range(0,net.shape[1])))[1]        
     
 def reachable(net, m0, m, limreach=False, solver='qsopt-ex'):
     """
@@ -53,11 +51,13 @@ def reachable(net, m0, m, limreach=False, solver='qsopt-ex'):
         m0 : an initial marking, represented by a 1-dimension numpy array
         m : a final marking, represented by a 1-dimension numpy array
         limreach : if true, reachable will test the lim-reachability of marking m
-
+        solver : the solver to use
+        
     Output : 
         sol : False if not reachable, else returns Parikh Image of solution, represented by a 1d numpy array.
         
     """
+    
     n1, n2 = net.shape
     assert len(m) == n1 and n1 == len(m0)
     
@@ -74,7 +74,7 @@ def reachable(net, m0, m, limreach=False, solver='qsopt-ex'):
         nbsol, sol = 0,np.zeros(l,dtype=Fraction)  
         A_eq = incident(subnet(net,t1))
 
-        for t in t1:
+        for t in range(0,l):
             result=None
                             
             if solver=='qsopt-ex':    
@@ -91,7 +91,7 @@ def reachable(net, m0, m, limreach=False, solver='qsopt-ex'):
             else :
                 raise Exception("No valid solver given")
                     
-            if result.status == 'feasable' :
+            if result.status == 'feasible' :
                 nbsol += 1
                 sol += result.x
             elif verbose and result.status != 'infeasible' :
@@ -125,21 +125,87 @@ def reachable(net, m0, m, limreach=False, solver='qsopt-ex'):
 
     return False
 
+def coverability(net, m0, m, limreach=False, solver='qsopt-ex'):
+    """
+    Coverability algorithm from [FH15]
+
+    Input : 
+        net : a continous petri net system, represented by a numpy reccord array with 2d tuples as elements
+        m0 : an initial marking, represented by a 1-dimension numpy array
+        m : a final marking, represented by a 1-dimension numpy array
+        limreach : if true, reachable will test the lim-reachability of marking m
+        solver : the solver to use
+
+    Output : 
+        sol : False if not reachable, else returns Parikh Image of solution, represented by a 1d numpy array.
+        
+    """
+    n1, n2 = net.shape
+    assert len(m) == n1 and n1 == len(m0)
+    
+    #initialy, t1 represents all the transitions of the Petri net system
+    t1 = np.arange(n2,dtype=np.int)
+
+    if np.array_equiv(m,m0) : 
+        return [0 for x in t1] 
+        
+    b_eq = np.array(m - m0)
+    
+    while t1.size != 0:
+        l = t1.size
+        nbsol, solv, solw = 0,np.zeros(l,dtype=Fraction), np.zeros(l,dtype=Fraction)  
+        A_eq = incident(subnet(net,t1))
+
+        for t in t1:
+            result=None
+                            
+                    
+            if result.status == 'feasible' :
+                nbsol += 1
+                solv += result.v
+                solw += result.w
+                
+            elif verbose and result.status != 'infeasible' :
+                print(solver+' finished with status '+result.status+' on the following problem :')
+                print("A_eq :", A_eq)            
+                print("b_eq :", b_eq)
+                print("Strict positive constraint on transition ", t)
+        
+        if nbsol == 0 :
+            #No solution, there is no combination of the transitions that can be equal to m-m0.
+            if verbose : print("No solution")
+            return False 
+
+        else :
+            y = Fraction(1,nbsol)
+            solv = [x * y for x in list(solv)]
+            solv = np.array(solv,dtype=Fraction) 
+            solw = [x * y for x in list(solw)]
+            solw = np.array(solw,dtype=Fraction) 
+
+
+        t1 = solv.nonzero()[0]
+        sub, subplaces = subnet(net, t1, True) 
+        t1 = np.intersect1d(t1, maxFS(sub, m0.take(subplaces)),assume_unique=True)
+        
+        if not limreach :
+            t1 = np.intersect1d(t1, maxFS(reversed_net(sub), (m+solw).take(subplaces)),assume_unique=True)
+
+
+        if np.array_equiv(t1,sol.nonzero()) :
+            #Found a solution. yay.
+            return sol
+
+    return False
+
+
 class FoundSolution(Exception):
     def __init__(self, solution):
         self.solution = solution
-    
-def minus_one_if_equal(t,x):
-    if t == x : return -1
-    else : return 0
 
 def if_equal(a, b, true_value, default_value):
     if a == b : return true_value
     else : return default_value
-
-def one_if_equal(t,x):
-    if t == x : return 1
-    else : return 0
 
 #e is the index of the strict probability constraint.
 def solve_qsopt(A, b, e):
@@ -149,19 +215,19 @@ def solve_qsopt(A, b, e):
     r = solve_with_qsopt(c, A, b)    
 
     if r.status == qsoptex.SolutionStatus.INFEASIBLE or (r.status == qsoptex.SolutionStatus.OPTIMAL and r.x[e] == 0):
-        #QSopt_ex : INFEASABLE
+        #QSopt_ex : INfeasible
         return Bunch(status='infeasible',x=None)
                 
     elif r.status == qsoptex.SolutionStatus.UNBOUNDED :
         #QSopt_ex : UNBOUNDED
         d = [0 for x in c]
         
-        A_up = np.array([[one_if_equal(i,e) for i, x in enumerate(c)]])
+        A_up = np.array([[if_equal(i,e,1,0) for i, x in enumerate(c)]])
         b_up = [1] #this is an arbitrairy cut
         r = solve_with_qsopt(d, A, b, A_up, b_up)
 
     if r.status == qsoptex.SolutionStatus.OPTIMAL :
-        r.status = 'feasable'
+        r.status = 'feasible'
     elif r.status == qsoptex.SolutionStatus.ITER_LIMIT:
         r.status = 'iter_limit_reached'
                            
@@ -219,16 +285,12 @@ def solve_with_qsopt(c, A_eq, b_eq, A_up=None, b_up=None, objective=None):
         
     p.set_objective_sense(objective)
     p.set_param(qsoptex.Parameter.SIMPLEX_DISPLAY, 0)
-  #  p.set_param(qsoptex.Parameter.SIMPLEX_MAX_ITERATIONS,1)
     result = Bunch(status=p.solve(),x=[])
 
     if result.status == qsoptex.SolutionStatus.OPTIMAL :
         # récupération de la valeur de la solution
         for j in range(0, n):
             result.x.append(p.get_value(names[j]))
-
-    elif result.status == qsoptex.SolutionStatus.ITER_LIMIT :
-        print("Basis : ", p.get_basis()) #Ne marche pas...
         
     return result
 
@@ -247,29 +309,23 @@ def solve_z3(A_eq, b_eq, t):
         else :
             s.add(0 <= x[j])
             
-    #equations = [z3.Sum([A_eq[i][j]*x[j] for j in range(0,A_eq.shape[1])]) == b_eq[i] for i in range(0,A_eq.shape[0])]         
-   # equations += [0< x[j] if j == t else 0<=x[j] for j in range(0,A_eq.shape[1])]
     Atype = type(A_eq) 
     if Atype == np.matrix :
         for i in range(0,A_eq.shape[0]) :
             s.add(z3.Sum([A_eq[i].getA1()[j]*x[j] for j in range(0,A_eq.shape[1])]) == b_eq[i])
 
-    elif Atype == np.recarray or Atype == np.ndarray or Atype == np.array :
+    else :
         for i in range(0,A_eq.shape[0]) :
             s.add(z3.Sum([A_eq[i][j]*x[j] for j in range(0,A_eq.shape[1])]) == b_eq[i])
-        
-    else :
-        raise TypeError("A_eq type is not recognize.")            
-    
     
     if s.check() == z3.sat:
-        print("Solution found")
+        if verbose : print("Solution found")
         m = s.model()
-        r = [m.evaluate(x[j]) for j in range(0,A_eq.shape[1])]
-        z3.print_matrix(r)
-        return Bunch(x=r,status='feasable')
+        r = np.array([Fraction(m[x[j]].numerator_as_long(),m[x[j]].denominator_as_long()) for j in range(0,A_eq.shape[1])], dtype=Fraction)
+        return Bunch(x=r,status='feasible')
+
     else :
-        print("No solution found")
+        if verbose : print("No solution found")
         return Bunch(status='infeasible')
 
 def solve_linprog(A_eq, b_eq, t):
@@ -280,7 +336,7 @@ def solve_linprog(A_eq, b_eq, t):
     elif result.status == 3 : #unbounded    
         return result
         pass
-    else : #Infeasable?
+    else : #Infeasible?
         return None
     
 ## You need to upgrade to scipy >=0.16.0 for it to work    
@@ -303,10 +359,10 @@ def solve_scipy(A_eq, b_eq, t):
         result = opt.linprog([if_equal(t,x,1,0) for x in range(0,A_eq.shape[1])], None, None, A_eq, b_eq, callback = cut_callback)        
     except FoundSolution as f :
         #x = confirme here that the result is valid 
-        return Bunch(status='feasable',x=f.solution)
+        return Bunch(status='feasible',x=f.solution)
         
     #assert with Farkas here    
-    return Bunch(status='infeasable',x=None) 
+    return Bunch(status='infeasible',x=None) 
 
 
 def solve_stp(A_eq, b_eq, t):    

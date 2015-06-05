@@ -89,7 +89,12 @@ class PNML_net:
 Parse a .pnml file to a numpy representation. Some information of the pnml file will not be kept.
 
 """        
-def parse_pnml_tree(tree):
+def parse_pnml(path):
+
+    print("parsing something, or at least trying to.")
+    pnml_file = open(path,'r')
+    tree = etree.parse(pnml_file)
+
     root = tree.getroot()
     page = root.find(version+"net/"+version+"page")
     name = root.find(version+"net/"+version+"name/"+version+"text").text
@@ -120,7 +125,12 @@ nets = []
 
 if __name__ == '__main__':
     args = sys.argv
-
+    if __package__ is None:
+        print("a")
+        import sys
+        from os import path
+        sys.path.append( path.dirname( path.dirname( path.abspath(__file__) ) ) )
+        
     if len(args) == 1 :
         print("No file specified. Feed me some .pnml files!")
     else :
@@ -129,11 +139,9 @@ if __name__ == '__main__':
         grammar_validator = etree.RelaxNG(pnmlmodel)
     
         for arg in args[1:]:
-            print("parsing something, or at least trying to.")
-            pnml_file = open(arg,'r')
-            pnmlnet = etree.parse(pnml_file)
 
-            nets.append(parse_pnml_tree(pnmlnet))        
+
+            nets.append(parse_pnml(arg))        
 
             
             

@@ -33,8 +33,23 @@ class ReachableTest(unittest.TestCase):
                 [(1,1), (2,0), (0,0), (0,0)],
                 [(0,0), (0,1), (1,0), (0,1)]],
         dtype=[('pre', 'uint'), ('post', 'uint')])
+        self.b = np.matrix([
+    #  t1      t2      t3      t4      t5      t6      s1      s2      s3
+    [(0, 1), (0, 0), (0, 0), (1, 0), (0, 0), (1, 0), (0, 0), (0, 0), (0, 0)],  # q1
+    [(1, 0), (0, 1), (0, 0), (0, 0), (0, 1), (0, 0), (0, 0), (0, 0), (0, 0)],  # q2
+    [(0, 0), (1, 0), (0, 1), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0)],  # q3
+    [(0, 0), (0, 0), (1, 0), (0, 1), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0)],  # q4
+    [(0, 0), (0, 0), (0, 0), (0, 0), (1, 0), (0, 1), (0, 0), (0, 0), (0, 0)],  # q5
+    [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 1), (0, 0), (1, 0)],  # p1
+    [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (1, 0), (0, 1), (0, 0)],  # p2
+    [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (1, 0), (0, 1)],  # p3
+    [(0, 0), (1, 1), (0, 0), (0, 0), (0, 0), (0, 0), (1, 0), (0, 0), (0, 1)],  # b1
+    [(0, 0), (0, 0), (0, 0), (1, 1), (1, 0), (0, 0), (0, 1), (0, 0), (1, 0)],  # nb1
+    [(0, 1), (0, 0), (1, 0), (0, 0), (0, 0), (1, 0), (0, 0), (1, 1), (0, 0)]], # nb2
+    dtype=[('pre', 'int64'), ('post', 'int64')])
 
-    def test_reachable(self):
+
+    def test_reachable1(self):
         m0 = np.array((2, 7, 3))
         m = np.array((3, 5, 3))
 
@@ -44,6 +59,37 @@ class ReachableTest(unittest.TestCase):
 
         self.assertTrue(np.array_equiv((pn.incident(self.a)*[[2],[1],[1],[0]]).getA1(), m - m0))
         self.assertTrue(np.array_equiv(np.dot(pn.incident(self.a),z).getA1(), m - m0))
+
+    def test_reachable2(self):
+
+        print(reachable(self.b,
+                np.array([1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1]),
+                np.array([0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0], dtype='int64')))
+        
+        #t6
+        z = reachable(self.b,
+                np.array([1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1]),
+                np.array([0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0], dtype='int64'))
+        print(z)
+        self.assertTrue(np.array_equiv(
+                z, [0,0,0,0,1,1,0,0,0]))
+        #t6, t5
+        self.assertTrue(np.array_equiv(
+                reachable(self.b,
+                np.array([1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1]),
+                np.array([0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0], dtype='int64')), [0,0,0,0,1,1,0,0,0]))
+        #t6t5t1
+        self.assertTrue(np.array_equiv(
+                reachable(self.b,
+                np.array([1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1]),
+                np.array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], dtype='int64')), [1,0,0,0,1,1,0,0,0]))
+        #t6t5t1t6
+        self.assertTrue(np.array_equiv(
+                reachable(self.b,
+                np.array([1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1]),
+                np.array([0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0], dtype='int64')), [1,0,0,0,1,2,0,0,0]))
+
+
 
     def test_unreachable(self):
         m0 = np.array((2, 7, 3))
