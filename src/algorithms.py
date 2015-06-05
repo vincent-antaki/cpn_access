@@ -4,7 +4,7 @@ from petrinet import *
 import numpy as np
 from fractions import Fraction
 
-verbose = False
+verbose = True
 
 """
 Fireable and Reachable algorithms from : 
@@ -111,14 +111,43 @@ def reachable(net, m0, m, limreach=False, solver='qsopt-ex'):
             y = Fraction(1,nbsol)
             sol = [x * y for x in list(sol)]
             sol = np.array(sol,dtype=Fraction) 
-            
-        t1 = sol.nonzero()[0]
-        sub, subplaces = subnet(net, t1, True) 
-        t1 = np.intersect1d(t1, maxFS(sub, m0.take(subplaces)),assume_unique=True)
-        
-        if not limreach:
-            t1 = np.intersect1d(t1, maxFS(reversed_net(sub), m.take(subplaces)),assume_unique=True)
 
+
+        
+        #the following lines are necessary to ensure that we use the good transition index and not the one of A_eq since it is base on a subnet.    
+        i=0
+        for x in range(0,l):
+            if sol[x] == 0:
+                t1 = np.delete(t1,x-i)
+                i+=1;
+
+        #Convertion chart
+        i=0
+        add_to_index = []
+        for x in range(0,n2):
+            if x in t1 :
+                add_to_index.append(i)
+            else :
+                i+=1
+                   
+        sub, subplaces = subnet(net, t1, True) 
+        
+        mxfs = []
+        for x in maxFS(sub, m0.take(subplaces)):
+            mxfs.append(add_to_index[x]+x)
+
+
+        t1 = np.intersect1d(t1, mxfs,assume_unique=True)
+        print("after intersect", t1)
+        if not limreach:
+        
+            mxfs = []
+            for x in maxFS(reversed_net(sub), m.take(subplaces)):
+                mxfs.append(add_to_index[x]+x)        
+            t1 = np.intersect1d(t1, mxfs,assume_unique=True)
+            
+            
+            print("after intersect2", t1)
         if np.array_equiv(t1,sol.nonzero()) :
             #Found a solution. yay.
             return sol

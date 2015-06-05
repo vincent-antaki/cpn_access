@@ -28,6 +28,7 @@ class FireableTest(unittest.TestCase):
 
 class ReachableTest(unittest.TestCase):
     def setUp(self):
+        self.solver = 'qsopt-ex'
         self.a = np.matrix(
                [[(1,0), (1,3), (0,1), (1,0)],
                 [(1,1), (2,0), (0,0), (0,0)],
@@ -53,7 +54,7 @@ class ReachableTest(unittest.TestCase):
         m0 = np.array((2, 7, 3))
         m = np.array((3, 5, 3))
 
-        result = reachable(self.a, m0, m)
+        result = reachable(self.a, m0, m,solver=self.solver)
         #valid path from m0 to m : [1,0,2,0]. associated Parikh image : [2,1,1,0]
         z = result[np.newaxis].transpose()       
 
@@ -62,34 +63,39 @@ class ReachableTest(unittest.TestCase):
 
     def test_reachable2(self):
 
-        print(reachable(self.b,
-                np.array([1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1]),
-                np.array([0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0], dtype='int64')))
+        m0 = np.array([1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1])
+
+        #print(reachable(self.b, m0, np.array([0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0], dtype='int64'),solver=self.solver))
         
-        #t6
-        z = reachable(self.b,
-                np.array([1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1]),
-                np.array([0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0], dtype='int64'))
+
+        
+        #t6 is a valid path
+        m = np.array([0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0], dtype='int64')
+        z = reachable(self.b, m0,m,solver=self.solver)
         print(z)
-        self.assertTrue(np.array_equiv(
-                z, [0,0,0,0,1,1,0,0,0]))
-        #t6, t5
-        self.assertTrue(np.array_equiv(
-                reachable(self.b,
-                np.array([1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1]),
-                np.array([0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0], dtype='int64')), [0,0,0,0,1,1,0,0,0]))
-        #t6t5t1
-        self.assertTrue(np.array_equiv(
-                reachable(self.b,
-                np.array([1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1]),
-                np.array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], dtype='int64')), [1,0,0,0,1,1,0,0,0]))
+        print(np.dot(pn.incident(self.b),z[np.newaxis].transpose()))
+        print(m-m0)
+        self.assertTrue(np.array_equiv(np.dot(pn.incident(self.b),z[np.newaxis].transpose()).getA1()
+                , m-m0))
+        #t6, t5 is a valid path
+        
+        m = np.array([0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0])
+        z = reachable(self.b, m0, m, solver=self.solver)
+        self.assertTrue(np.array_equiv(np.dot(pn.incident(self.b),z[np.newaxis].transpose()).getA1()
+                , m-m0))        
+        #t6t5t1 is a valid path
+        m = np.array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1])
+        z = reachable(self.b, m0, m, solver=self.solver)
+        self.assertTrue(np.array_equiv(np.dot(pn.incident(self.b),z[np.newaxis].transpose()).getA1()
+                , m-m0))        
+
         #t6t5t1t6
-        self.assertTrue(np.array_equiv(
-                reachable(self.b,
-                np.array([1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1]),
-                np.array([0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0], dtype='int64')), [1,0,0,0,1,2,0,0,0]))
-
-
+        
+        m = np.array([0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0])
+        
+        z = reachable(self.b, m0, m, solver=self.solver)
+        self.assertTrue(np.array_equiv(np.dot(pn.incident(self.b),z[np.newaxis].transpose()).getA1()
+                , m-m0))        
 
     def test_unreachable(self):
         m0 = np.array((2, 7, 3))
@@ -101,6 +107,7 @@ class LimReachTest(unittest.TestCase):
     def setUp(self):
         #a and b have the same incidence matrix but not the same reachable spaces
         #example took from On Reachability in Continuous Petri Net Systems by Julvez, Recalde and Silva
+        self.solver = 'qsopt-ex'
         self.a = np.matrix(
                [[(1,0), (0,1)],
                 [(0,1), (1,0)]],
@@ -115,16 +122,16 @@ class LimReachTest(unittest.TestCase):
         m0 = np.array([2,0])
         m = np.array([0,2])
 
-        z = reachable(self.a,m0,m)
+        z = reachable(self.a,m0,m,solver=self.solver)
         self.assertIsInstance(z,np.ndarray)
-        z = reachable(self.a, m0, m, limreach=True)
+        z = reachable(self.a, m0, m, limreach=True,solver=self.solver)
         self.assertIsInstance(z, np.ndarray)
                 
-        z = reachable(self.b,m0,m)
+        z = reachable(self.b,m0,m,solver=self.solver)
         self.assertTrue(z is False)        
-        z = reachable(self.b, m0, m, limreach=True)
+        z = reachable(self.b, m0, m, limreach=True,solver=self.solver)
         self.assertIsInstance(z, np.ndarray)
-        
+"""        
 class RecArrayLimReachTest(LimReachTest):
     def setUp(self):
         LimReachTest.setUp(self)
@@ -133,10 +140,22 @@ class RecArrayLimReachTest(LimReachTest):
         print(self.a)
         print(self.b)
         
-class RecArrayReachableTest(LimReachTest):
+class RecArrayReachableTest(ReachableTest):
     def setUp(self):
-        LimReachTest.setUp(self)
+        ReachableTest.setUp(self)
         self.a = np.rec.array(self.a)
         self.b = np.rec.array(self.b)
         print(self.a)
         print(self.b)        
+"""        
+class Z3LimReachTest(LimReachTest) :
+    def setUp(self):
+        LimReachTest.setUp(self)
+        self.solver = 'z3'
+        
+class Z3ReachableTest(ReachableTest) :
+    def setUp(self):
+        ReachableTest.setUp(self)
+        self.solver = 'z3'        
+        
+##Rajouter des tests pour les tester le dtype ('uint','int64') des inputs ??
