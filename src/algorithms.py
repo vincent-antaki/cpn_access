@@ -4,7 +4,7 @@ from petrinet import *
 import numpy as np
 from fractions import Fraction
 
-verbose = False
+verbose = True
 
 """
 Fireable and Reachable algorithms from : 
@@ -148,13 +148,13 @@ def reachable(net, m0, m, limreach=False, solver='qsopt-ex'):
             
             
             print("after intersect2", t1)
-        if np.array_equiv(t1,sol.nonzero()) :
+        if np.array_equiv(t1, sol.nonzero()) :
             #Found a solution. yay.
             return sol
 
     return False
 
-def coverability(net, m0, m, limreach=False, solver='qsopt-ex'):
+def coverable(net, m0, m, limreach=False, solver='qsopt-ex'):
     """
     Coverability algorithm from [FH15]
 
@@ -175,19 +175,22 @@ def coverability(net, m0, m, limreach=False, solver='qsopt-ex'):
     #initialy, t1 represents all the transitions of the Petri net system
     t1 = np.arange(n2,dtype=np.int)
 
-    if np.array_equiv(m,m0) : 
+    if all([ m0[i] >= m[i] for i in range(0,n1)]  ):
         return [0 for x in t1] 
         
     b_eq = np.array(m - m0)
-    
     while t1.size != 0:
         l = t1.size
-        nbsol, solv, solw = 0,np.zeros(l,dtype=Fraction), np.zeros(l,dtype=Fraction)  
+        nbsol, solv, solw = 0, np.zeros(l, dtype=Fraction), np.zeros(n1,dtype=Fraction)
         A_eq = incident(subnet(net,t1))
 
-        for t in t1:
-            result=None
-                            
+        for t in range(0,l):
+            result=None    
+                    
+            if solver=='z3' :
+                result = solve_coverability_z3(A_eq, b_eq, t)
+            else :
+                raise Exception("No valid solver defined.")        
                     
             if result.status == 'feasible' :
                 nbsol += 1
@@ -213,17 +216,45 @@ def coverability(net, m0, m, limreach=False, solver='qsopt-ex'):
             solw = np.array(solw,dtype=Fraction) 
 
 
-        t1 = solv.nonzero()[0]
-        sub, subplaces = subnet(net, t1, True) 
-        t1 = np.intersect1d(t1, maxFS(sub, m0.take(subplaces)),assume_unique=True)
         
-        if not limreach :
-            t1 = np.intersect1d(t1, maxFS(reversed_net(sub), (m+solw).take(subplaces)),assume_unique=True)
+        #the following lines are necessary to ensure that we use the good transition index and not the one of A_eq since it is base on a subnet.    
+        i=0
+        for x in range(0,l):
+            if solv[x] == 0:
+                t1 = np.delete(t1,x-i)
+                i+=1;
+
+        #Convertion chart. Since t1 is a subset of transitio  the array add_to_index tells us how much to add to every index in t1
+        # to get the corresponding index in the initial net
+        i=0
+        add_to_index = []
+        for x in range(0,n2):
+            if x in t1 :
+                add_to_index.append(i)
+            else :
+                i+=1
+                   
+        sub, subplaces = subnet(net, t1, True) 
+        
+        mxfs = []
+        for x in maxFS(sub, m0.take(subplaces)):
+            mxfs.append(add_to_index[x]+x)
 
 
-        if np.array_equiv(t1,sol.nonzero()) :
+        t1 = np.intersect1d(t1, mxfs,assume_unique=True)
+        print("after intersect", t1)
+        if not limreach:
+        
+            mxfs = []
+            for x in maxFS(reversed_net(sub), m.take(subplaces)):
+                mxfs.append(add_to_index[x]+x)        
+            t1 = np.intersect1d(t1, mxfs,assume_unique=True)
+            
+            
+            print("after intersect2", t1)
+        if np.array_equiv(t1,solv.nonzero()) :
             #Found a solution. yay.
-            return sol
+            return solv
 
     return False
 
@@ -327,35 +358,94 @@ def solve_GLPK(o, A_eq, b_eq, t) :
     pass
     
 def solve_z3(A_eq, b_eq, t):
-    """Solve using Microsoft z3"""
+    """Solve using Microsoft z3
+    
+    
+    The following problem will be solve :
+    
+        E?v where 
+        v[t]>0, v>=0. A_eq*v = b_eq 
+    
+    
+    """
     import z3
     s = z3.Solver()
-    x = [z3.Real("x_%i" % (i+1)) for i in range(0,A_eq.shape[1])]
+    v = [z3.Real("x_%i" % (i+1)) for i in range(0,A_eq.shape[1])]
 
     for j in range(0,A_eq.shape[1]):
         if j == t :
-            s.add(0 < x[j])        
+            s.add(0 < v[j])
         else :
-            s.add(0 <= x[j])
+            s.add(0 <= v[j])
             
     Atype = type(A_eq) 
     if Atype == np.matrix :
         for i in range(0,A_eq.shape[0]) :
-            s.add(z3.Sum([A_eq[i].getA1()[j]*x[j] for j in range(0,A_eq.shape[1])]) == b_eq[i])
+            s.add(z3.Sum([A_eq[i].getA1()[j]*v[j] for j in range(0,A_eq.shape[1])]) == b_eq[i])
 
     else :
         for i in range(0,A_eq.shape[0]) :
-            s.add(z3.Sum([A_eq[i][j]*x[j] for j in range(0,A_eq.shape[1])]) == b_eq[i])
+            s.add(z3.Sum([A_eq[i][j]*v[j] for j in range(0,A_eq.shape[1])]) == b_eq[i])
     
     if s.check() == z3.sat:
         if verbose : print("Solution found")
         m = s.model()
-        r = np.array([Fraction(m[x[j]].numerator_as_long(),m[x[j]].denominator_as_long()) for j in range(0,A_eq.shape[1])], dtype=Fraction)
+        r = np.array([Fraction(m[v[j]].numerator_as_long(),m[v[j]].denominator_as_long()) for j in range(0,A_eq.shape[1])], dtype=Fraction)
         return Bunch(x=r,status='feasible')
 
     else :
         if verbose : print("No solution found")
         return Bunch(status='infeasible')
+
+def solve_coverability_z3(A_eq, b_eq, t):
+    """Solve using Microsoft z3
+    
+        The following problem will be solve :
+    
+        E?v,w where 
+        v[t]>0, w>=0, v>=0. A_eq*v - w = b_eq 
+
+        * is a matrix product
+    
+    """
+    import z3
+    s = z3.Solver()
+    v = [z3.Real("x_%i" % (i+1)) for i in range(0,A_eq.shape[1])]
+    w = [z3.Real("w_%i" % (i+1)) for i in range(0,A_eq.shape[0])]
+
+    for j in range(0,A_eq.shape[1]):
+
+        if j == t :
+            s.add(0 < v[j])
+        else :
+            s.add(0 <= v[j])
+            
+    Atype = type(A_eq) 
+    if Atype == np.matrix :
+        for i in range(0,A_eq.shape[0]) :
+            #TODO : arranger pour ne pas calculer .getA1() a chaque fois.
+            s.add(w[i] >= 0)
+            s.add(z3.Sum([A_eq[i].getA1()[j]*v[j] for j in range(0,A_eq.shape[1])])  - w[i] == b_eq[i])
+
+    else :
+        for i in range(0,A_eq.shape[0]) :
+            s.add(w[j] >= 0)
+            s.add(z3.Sum([A_eq[i][j]*v[j] for j in range(0,A_eq.shape[1])])  - w[i] == b_eq[i])
+    
+    if s.check() == z3.sat:
+        if verbose : print("Solution found")
+        m = s.model()
+        r = np.array([Fraction(m[v[j]].numerator_as_long(),m[v[j]].denominator_as_long()) for j in range(0,A_eq.shape[1])], dtype=Fraction)
+        w2 = np.array([Fraction(m[w[j]].numerator_as_long(),m[w[j]].denominator_as_long()) for j in range(0,A_eq.shape[0])], dtype=Fraction)
+        
+        return Bunch(v=r, w=w2, status='feasible')
+
+    else :
+        if verbose : print("No solution found")
+        return Bunch(status='infeasible')
+    
+
+
 
 def solve_linprog(A_eq, b_eq, t):
     """Solve using the Scipy.optimize.linprog's simplex algorithm"""
