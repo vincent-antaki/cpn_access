@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+import petrinet as pn
 from scipy import stats
 from random import *
 import sys
 import pickle
-#import pickle
 
 maximum=10
 quantity_to_build = {'verysmall':10,
@@ -59,10 +59,26 @@ def generate_pn_by_size(size='small',qte=10, p=0.55, c_leq_t=False,no_degenerate
 
 
 """
-Return a marking that match the net shape.
+Generate a marking of length c where each element are [0,maximum].
 """
-def getM(c,maxim=maximum):
-    return np.array([randint(0,maxim*2) for i in range(0,c)])
+def getM(c):
+    return np.array([randint(0,maximum*2) for i in range(0,c)])
+
+
+"""
+Generate a marking that match the net shape. The marking is a linear combination of the transitions of a net + m0
+"""
+def getM2(net, m0, p):
+    distribution = [np.arange(maximum+1),[p if i==0 else (1-p)/maximum for i in range(0,maximum+1)]]
+    random_var = stats.rv_discrete(values=distribution)
+
+    nb_t = net.shape[1]
+    r = random_var.rvs(size=nb_t)
+    c = pn.incident(net)
+    m = np.dot(c,r) + m0
+    print(m)
+
+    return m
 
 def generate_pn(shape,random_var):
     """
