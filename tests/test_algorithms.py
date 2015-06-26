@@ -157,5 +157,12 @@ class Z3ReachableTest(ReachableTest) :
     def setUp(self):
         ReachableTest.setUp(self)
         self.solver = 'z3'        
-        
+
 ##Rajouter des tests pour les tester le dtype ('uint','int64') des inputs ??
+
+class ScipyReachTest(ReachableTest):
+    def setUp(self):
+        ReachableTest.setUp(self)
+        self.solver='scipy'
+
+
