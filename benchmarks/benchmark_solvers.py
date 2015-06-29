@@ -6,6 +6,7 @@ import re #regex
 import glob
 import os
 
+
 class Benchmark_Solver(benchmark.Benchmark):
 
     each = 1 # allows for differing number of runs
@@ -26,7 +27,7 @@ if __name__ == '__main__':
         sys.path.append(path.join(path.dirname(__file__), '..', 'src'))
         sys.path.append(path.join(path.dirname(__file__), '..', 'pnml'))
         import pnmlparser 
-        from generate_pn import getM
+        from generate_pn import getM2
         from algorithms import reachable
     pnmlregex = re.compile(".*\.pnml")
     args = sys.argv
@@ -36,13 +37,20 @@ if __name__ == '__main__':
         for filename in glob.glob(path.join(path.dirname(__file__),'testset/*.pnml')):
 
             pnml = pnmlparser.parse(filename)
-            setattr(Benchmark_Solver,"test_"+pnml.name, lambda self:reachable(pnml.net,pnml.initialmarking,getM2(pnml.net.shape[0]),solver=self.solver))
+            m0 = pnml.initialmarking
+#           m = getM(pnml.net.shape[0])
+            m = getM2(pnml.net,m0,0.2)
+            setattr(Benchmark_Solver,"test_"+pnml.name, lambda self:reachable(pnml.net,pnml.initialmarking,m,solver=self.solver))
     else :        
         for arg in args[1:]:
             if pnmlregex.match(arg) :
                 #parsepnml
                 pnml = pnmlparser.parse(arg)
-                setattr(Benchmark_Solver,"test_"+pnml.name, lambda self:reachable(pnml.net,pnml.initialmarking,getM(pnml.net.shape[0]),solver=self.solver))             
+                m0 = pnml.initialmarking
+#               m = getM(pnml.net.shape[0])
+	        m = getM2(pnml.net,m0,0.2)
+
+                setattr(Benchmark_Solver,"test_"+pnml.name, lambda self:reachable(pnml.net,pnml.initialmarking,m,solver=self.solver))             
             else :
                 print("Not a pnml")     
 

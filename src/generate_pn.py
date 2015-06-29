@@ -104,7 +104,7 @@ def getM2(net, m0, p):
         b_up = np.append(-1*m0,r)
 
         e = np.eye(nb_t,dtype=np.int)
-        a_up = np.vstack((c, e))
+        a_up = np.vstack((c, e))#
 
         print(e,e.dtype)
         print(c,c.dtype)
@@ -132,8 +132,9 @@ def getM2(net, m0, p):
             print("M : ", q)
             return q
         else :
-    #        if verbose :
-            print("No solution found")
+            pass    
+#        if verbose :
+   #         print("No solution found")
 
 def generate_pn(shape,random_var):
     """
