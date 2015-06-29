@@ -2,11 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+from scipy.signal.windows import general_gaussian
 import petrinet as pn
 from scipy import stats,optimize
 from random import *
 import sys
 import pickle
+from fractions import Fraction
 
 maximum=10
 quantity_to_build = {'verysmall':10,
@@ -69,58 +71,69 @@ def getM(c):
 Generate a marking that match the net shape. The marking is a linear combination of the transitions of a net + m0
 """
 def getM2(net, m0, p):
-    distribution = [np.arange(maximum+1),[p if i==0 else (1-p)/maximum for i in range(0,maximum+1)]]
-    random_var = stats.rv_discrete(values=distribution)
+    done = False
+    while(not done):
+        distribution = [np.arange(3+1),[p if i==0 else (1-p)/3 for i in range(0,4)]]
+        random_var = stats.rv_discrete(values=distribution)
 
-## A Retirer
-#    nb_t = net.shape[1]
-#    c = pn.incident(net)
-#    ok = False
-#    while(!ok):	
-#        r = np.array(random_var.rvs(size=nb_t))
-#        b_up = np.append(m0,r)
-#        a_up = np.vstack((-1*c,(-1 * np.eye((nb_t,nb_t)))
- #       
- #      result = optimize.linprog(A_up = a_up,b_up = r)
-  #      print(result.status)
-  #      assert()
- #       print(result.x)
-#        m = np.dot(c,r) + m0
-#
-#        if all([i >= 0 for i in m]):
-#            ok = True
-#        print(m)
-#
-##
-    nb_t = net.shape[1]
-    import z3
-    s = z3.Solver()
-    c = pn.incident(net)
-    r = np.array(random_var.rvs(size=nb_t))
-    b_up = np.append(-1*m0,r)
+    ## A Retirer
+    #    nb_t = net.shape[1]
+    #    c = pn.incident(net)
+    #    ok = False
+    #    while(!ok):
+    #        r = np.array(random_var.rvs(size=nb_t))
+    #        b_up = np.append(m0,r)
+    #        a_up = np.vstack((-1*c,(-1 * np.eye((nb_t,nb_t)))
+     #
+     #      result = optimize.linprog(A_up = a_up,b_up = r)
+      #      print(result.status)
+      #      assert()
+     #       print(result.x)
+    #        m = np.dot(c,r) + m0
+    #
+    #        if all([i >= 0 for i in m]):
+    #            ok = True
+    #        print(m)
+    #
+    ##
+        nb_t = net.shape[1]
+        import z3
+        s = z3.Solver()
+        c = np.array(pn.incident(net))
+        r = np.array(random_var.rvs(size=nb_t))
+        b_up = np.append(-1*m0,r)
 
+        e = np.eye(nb_t,dtype=np.int)
+        a_up = np.vstack((c, e))
 
-    #a fix
-    a_up = np.vstack((c,np.eye((nb_t,nb_t),dtype=np.int) ))
-
-
-    v = [z3.Int("x_%i" % (i+1)) for i in range(0,a_up.shape[0])]
-    print("c : ", c, ", r : ",r)
-    print("A_up shape : ",a_up.shape,"b_up shape : ", b_up.shape)
-    assert a_up.shape[0] == b_up.size
-    for i in range(0,b_up.size):
-        s.add(z3.Sum([a_up[i][x]*v[x] for x in range(a_up.shape[0])]) >= b_up[i])
+        print(e,e.dtype)
+        print(c,c.dtype)
 
 
-    if s.check() == z3.sat:
-#        if verbose : 
-        print("Solution found")
-        m = s.model()
-        r = np.array([Fraction(m[v[j]].numerator_as_long(),m[v[j]].denominator_as_long()) for j in range(0,A_eq.shape[1])], dtype=Fraction)
+        v = [z3.Int("x_%i" % (i+1)) for i in range(0,a_up.shape[1])]
+        #v = z3.IntVector('v',a_up.shape[0])
+        print("c : ", c, ", r : ",r)
+        print("A_up shape : ",a_up.shape,"b_up shape : ", b_up.shape)
 
-    else :
-#        if verbose : 
-        print("No solution found")    
+        assert a_up.shape[0] == b_up.size
+        for i in range(0,b_up.size):
+            s.add(z3.Sum([a_up[i][x]*v[x] for x in range(nb_t)]) >= b_up[i])
+
+
+        if s.check() == z3.sat:
+    #        if verbose :
+            done = True
+    #        print("Solution found")
+            m = s.model()
+    #        print(m)
+            r = np.array([m[j].as_long() for j in v], dtype=np.int)
+            print(r)
+            q = np.dot(c,r)
+            print("M : ", q)
+            return q
+        else :
+    #        if verbose :
+            print("No solution found")
 
 def generate_pn(shape,random_var):
     """
@@ -250,3 +263,4 @@ a = np.matrix(
 
 m0 = np.array([2,5,7])                
                 
+getM2(a,m0,0.2)

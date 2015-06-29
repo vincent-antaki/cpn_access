@@ -4,7 +4,7 @@ from petrinet import *
 import numpy as np
 from fractions import Fraction
 
-verbose = True
+verbose = False
 
 """
 Fireable and Reachable algorithms from : 
@@ -84,10 +84,7 @@ def reachable(net, m0, m, limreach=False, solver='qsopt-ex'):
             elif solver=='z3':
                 result=solve_z3(A_eq, b_eq, t)
             elif solver=='scipy':
-                try :
-                    result=solve_scipy(A_eq, b_eq, t)    
-                except FoundSolution as f :
-                    pass
+                result=solve_scipy(A_eq, b_eq, t)
             else :
                 raise Exception("No valid solver given")
                     
@@ -135,10 +132,8 @@ def reachable(net, m0, m, limreach=False, solver='qsopt-ex'):
         mxfs = []
         for x in maxFS(sub, m0.take(subplaces)):
             mxfs.append(add_to_index[x]+x)
-
-
         t1 = np.intersect1d(t1, mxfs,assume_unique=True)
-        print("after intersect", t1)
+
         if not limreach:
         
             mxfs = []
@@ -147,7 +142,7 @@ def reachable(net, m0, m, limreach=False, solver='qsopt-ex'):
             t1 = np.intersect1d(t1, mxfs,assume_unique=True)
             
             
-            print("after intersect2", t1)
+
         if np.array_equiv(t1, sol.nonzero()) :
             #Found a solution. yay.
             return sol
@@ -257,11 +252,6 @@ def coverable(net, m0, m, limreach=False, solver='qsopt-ex'):
             return solv
 
     return False
-
-
-class FoundSolution(Exception):
-    def __init__(self, solution):
-        self.solution = solution
 
 def if_equal(a, b, true_value, default_value):
     if a == b : return true_value
@@ -457,35 +447,53 @@ def solve_linprog(A_eq, b_eq, t):
         pass
     else : #Infeasible?
         return None
-    
+
 ## You need to upgrade to scipy >=0.16.0 for it to work    
 def solve_scipy(A_eq, b_eq, t):
     """Solve using the Scipy.optimize.linprog's simplex algorithm and cuting second-step with callback function"""
     import scipy.optimize as opt
     #Callback function, will be use to stop the simplex when it has a valid solution respecting strict constraint
     def cut_callback(xk, **kwargs) :
-        print("strictpositive fct : xk = ",xk, xk[t]>0)
-        print(kwargs)
+
+        pass
+        #
         if kwargs["phase"] == 2 and xk[t]>0 :
-#            x = calculate_vector_from_basis()
-            
-            print("Found solution and aborted the rest of the simplex :",xk)
-            raise FoundSolution(xk)
+            #x = confirme here that the result is valid
+            print("strictpositive fct : xk = ",xk, xk[t]>0)
+            print(kwargs)
+            x = calculate_vector_from_basis(kwargs['tableau'])
+            #assert()
+            raise ArithmeticError
+
+            raise FoundSolution(x)
 
     try :
         #http://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.linprog.html
         #solve (exist v | v>=0 and C_{PxT1}v = m -m0)                                               
         result = opt.linprog([if_equal(t,x,1,0) for x in range(0,A_eq.shape[1])], None, None, A_eq, b_eq, callback = cut_callback)        
     except FoundSolution as f :
-        #x = confirme here that the result is valid 
+
         return Bunch(status='feasible',x=f.solution)
         
     #assert with Farkas here    
     return Bunch(status='infeasible',x=None) 
 
+## Return an array of rationnal number calculated from the simplex basis
+
+def calculate_vector_from_basis(t):
+    pass
+    #return [Fraction()]
+
+
+
 
 def solve_stp(A_eq, b_eq, t):    
     pass
+
+
+class FoundSolution(Exception):
+    def __init__(self, solution):
+        self.solution = solution
     
 class Bunch:
     def __init__(self, **kwds):
