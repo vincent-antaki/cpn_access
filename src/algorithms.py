@@ -454,6 +454,8 @@ def solve_scipy(A_eq, b_eq, t):
     import scipy.optimize as opt
     #Callback function, will be use to stop the simplex when it has a valid solution respecting strict constraint
     def cut_callback(xk, **kwargs) :
+
+        pass
         #
         if kwargs["phase"] == 2 and xk[t]>0 :
             #x = confirme here that the result is valid
