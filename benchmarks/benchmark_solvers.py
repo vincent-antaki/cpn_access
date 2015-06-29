@@ -3,7 +3,8 @@
 import benchmark
 import math
 import re #regex
-
+import glob
+import os
 
 class Benchmark_Solver(benchmark.Benchmark):
 
@@ -12,9 +13,9 @@ class Benchmark_Solver(benchmark.Benchmark):
     def setUp(self):
         self.solver='qsopt-ex'        
             
-#class Benchmark_z3(Benchmark_Solver):
-#    def setUp(self):
-#        self.solver = 'z3'
+class Benchmark_z3(Benchmark_Solver):
+    def setUp(self):
+        self.solver = 'z3'
 
 
 if __name__ == '__main__':
@@ -30,15 +31,20 @@ if __name__ == '__main__':
     pnmlregex = re.compile(".*\.pnml")
     args = sys.argv
     print(args)
-    for arg in args[1:]:
-        if pnmlregex.match(arg) :
-            #parsepnml
-            pnml = pnmlparser.parse(arg)
-            
-            setattr(Benchmark_Solver,"test_"+pnml.name, lambda self:reachable(pnml.net,pnml.initialmarking,getM(pnml.net.shape[0]),solver=self.solver))
-            
-        else :
-            print("Not a pnml")     
+    if len(args) == 1:
+        print("No argument given. Running full test on .pnml in testset directory.")
+        for filename in glob.glob(path.join(path.dirname(__file__),'testset/*.pnml')):
+
+            pnml = pnmlparser.parse(filename)
+            setattr(Benchmark_Solver,"test_"+pnml.name, lambda self:reachable(pnml.net,pnml.initialmarking,getM2(pnml.net.shape[0]),solver=self.solver))
+    else :        
+        for arg in args[1:]:
+            if pnmlregex.match(arg) :
+                #parsepnml
+                pnml = pnmlparser.parse(arg)
+                setattr(Benchmark_Solver,"test_"+pnml.name, lambda self:reachable(pnml.net,pnml.initialmarking,getM(pnml.net.shape[0]),solver=self.solver))             
+            else :
+                print("Not a pnml")     
 
     benchmark.main(format="markdown", numberFormat="%.4g")
     # could have written benchmark.main(each=50) if the
