@@ -63,7 +63,8 @@ class PNML_net:
         for i,x in enumerate(self.places):
             self.P_map[x.pnml_id] = i
             self.initialmarking.append(x.initialmarking)
-        
+        self.initialmarking = np.array(self.initialmarking)
+
         for i,x in enumerate(self.transitions):
             self.T_map[x.pnml_id] = i
             
