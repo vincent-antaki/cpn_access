@@ -8,28 +8,22 @@ import os
 
 
 class Benchmark_Solver(benchmark.Benchmark):
-
-    each = 1 # allows for differing number of runs
-
-    def setUp(self):
-        self.solver='qsopt-ex'        
+    each = 1
+    pass
 
 def addtest(name, net, m0, m):
-    def to_bench(self, net, m0, m):
-        z = reachable(net,m0,m,solver=self.solver)
+    def to_bench(self, net, m0, m, solver):
+        print("trying "+str([net,m0,m,solver]))
+        z = reachable(net,m0,m,solver=solver)
         print(name)
         print("From configuration")
         print(m0)
         print("To configuration")
         print(m)
         print(z)
-    setattr(Benchmark_Solver, "test_" + name, lambda self: to_bench(self, net, m0, m))
+    setattr(Benchmark_Solver, "test_qsoptex_" + name, lambda self: to_bench(self, net, m0, m,'qsopt-ex'))
+    setattr(Benchmark_Solver, "test_z3_" + name, lambda self: to_bench(self, net, m0, m,'z3'))
     print("Added test_"+name)
-
-
-class Benchmark_z3(Benchmark_Solver):
-    def setUp(self):
-        self.solver = 'z3'
 
 if __name__ == '__main__':
     if __package__ is None:
@@ -41,11 +35,11 @@ if __name__ == '__main__':
         import pnmlparser
         from generate_pn import getM2
         from algorithms import reachable
-    pnmlregex = re.compile(".*\.pnml")
     args = sys.argv
     print(args)
+    import pickle
+
     if len(args) == 1:
-        import pickle
         print("No argument given. Running full test on .pnml in testset directory.")
 
 
@@ -56,26 +50,26 @@ if __name__ == '__main__':
                 continue
 
             print("Parsing "+filename+" ...")
-            try:
-                pnml = pnmlparser.parse(filename)
-                m0 = pnml.initialmarking
-            except Exception as e :
-                print(e.message)
-                print("Failed to parse pnml")
-                continue
-            print("The size of the pnml is "+str(pnml.net.shape))
+            #try:
+            model = pnmlparser.parse(filename)
+            m0 = model.initialmarking
+            #except Exception as e :
+            #    print(e.message)
+            #    print("Failed to parse pnml")
+            #    continue
+            print("The size of the pnml is "+str(model.net.shape))
             x = raw_input("Do you wish to generate a final marking? (y/n)")
             if x == 'y':
 
                 print("Generating final marking...")
     #           m = getM(pnml.net.shape[0])
-                setattr(pnml,'finalmarking',getM2(pnml.net,m0,0.2))
-                m=pnml.finalmarking
-                print(pnml.name,"\n",m0,m)
+                setattr(model,'finalmarking',getM2(model.net,m0,0.2))
+                m=model.finalmarking
+                print(model.name,"\n",m0,m)
                 #if verbose : print()
 
-                pickle.dump(pnml, open(pnml.name+'.nPN',"wb"))
-                print("Saved "+pnml.name+".nPN")
+                pickle.dump(model, open(model.name+'.nPN',"wb"))
+                print("Saved "+model.name+".nPN")
 
 
             #def to_bench(self, net, m0, m):
@@ -84,23 +78,38 @@ if __name__ == '__main__':
             #print("Adding to benchmark class")
             #setattr(Benchmark_Solver,"test_"+pnml.name, lambda self : to_bench(self.solver, pnml.net,pnml.initialmarking,m))
 
-        for filename in glob.glob(path.join(path.dirname(__file__),'testset/*.nPN')):
+        x = raw_input("Do you wish to run test on every .nPN files in testset/ ? (y/n)")
+        if x == 'y':
+            for filename in glob.glob(path.join(path.dirname(__file__),'testset/*.nPN')):
 
-            pnml = pickle.load(open(filename,"rb"))
-            addtest(pnml.name,pnml.net,pnml.initialmarking,pnml.finalmarking)
+                model = pickle.load(open(filename,"rb"))
+                addtest(model.name,model.net,model.initialmarking,model.finalmarking)
     else:
+
+        #Takes .npn file. which is basically load with pickle and use the attributes
         for arg in args[1:]:
-            if pnmlregex.match(arg) :
+  #          pnmlregex = re.compile("*.pnml")
+ #           npnregex = re.compile("*.nPN")
+
+#            if pnmlregex.match(arg) :
                 #parsepnml
-                pnml = pnmlparser.parse(arg)
-                m0 = pnml.initialmarking
-#               m = getM(pnml.net.shape[0])
-	        m = getM2(pnml.net,m0,0.2)
+            #Must be a .nPN
+            model = pickle.load(open(arg,"rb"))
+            addtest(model.name,model.net,model.initialmarking,model.finalmarking)
 
-                setattr(Benchmark_Solver,"test_"+pnml.name, lambda self:reachable(pnml.net,pnml.initialmarking,m,solver=self.solver))             
-            else :
-                print("Not a pnml")     
 
-    benchmark.main(format="markdown", numberFormat="%.4g")
-    # could have written benchmark.main(each=50) if the
-    # first class shouldn't have been run 100 times.
+    r = Benchmark_Solver()
+    r.run()
+#    r = benchmark.main(format="csv", numberFormat="%.4g")
+    x = r.getTable(format='csv')
+    x = x.replace(' ','')
+    x = x.replace('|',',')
+    x = x.split('\n')
+    print(r)
+    previous_result = open('result.csv',"rb").read()
+    for i in range(1,len(x)):
+        previous_result += '\n'+x[i]
+    print(previous_result)
+    f = open('result.csv',"wb")
+    f.write(previous_result)
+    f.close()

@@ -1,4 +1,6 @@
-from lxml import etree
+#from lxml import etree
+
+from xml.etree import cElementTree as ElementTree
 import numpy as np
 import sys
 
@@ -81,56 +83,81 @@ class PNML_net:
         self.net = np.rec.array(zip(pre.ravel(),post.ravel()), dtype=[('pre','uint'),('post','uint')]).reshape(pre.shape)
 
         
-        
+
 """
 Parse a .pnml file to a numpy representation. Some information of the pnml file will not be kept.
 
 """        
 def parse(path):
-
+    print('parsing {}...'.format(path))
     pnml_file = open(path,'r')
-    tree = etree.parse(pnml_file)
+    # tree = etree.parse(pnml_file)
+    it = ElementTree.iterparse(pnml_file)
 
-    root = tree.getroot()
-    page = root.find(version+"net/"+version+"page")
-    name = root.find(version+"net/"+version+"name/"+version+"text").text
-    
     transitions = set()
     places = set()
     arcs = set()
-    
+    name = None
 
-    for p in page.iter(version+"place"):
-        initial_marking=int(p.find(version+"initialMarking/"+version+"text").text)
-        pname = p.find(version+"name/"+version+"text").text
-        places.add(Place( p.attrib['id'], pname, initial_marking))        
+#    for event, el in it:
+#        if event == 'end':
+#            print(el.tag, el.attrib)
+#            if el.tag == version + 'net':
+#                name = el.findtext('{*}name/{*}text')
 
-    for t in page.iter(version+"transition"):
+#            if el.tag == version + 'place':
+#                initial_marking = int(el.findtext("{*}initialMarking/{*}text", 0))
+#                pname = el.findtext("{*}name/{*}text")
+#                places.add(Place(el.attrib['id'], pname, initial_marking))
+
+#            elif el.tag == version + 'transition':
+#                transitions.add(Transition(el.attrib['id']))
+
+#            elif el.tag == version + 'arc':
+#                arcs.add(Arc(el.attrib['id'], el.attrib['source'], el.attrib['target'], int(el.findtext("{*}inscription/{*}text", 1))))
+
+#    print(name, places, transitions, arcs)
+
+#    return PNML_net(name,places,transitions,arcs)
+
+    root = it.root
+
+    print(root.tag)
+    page = root.find("net/page")
+    name = root.findtext("net/name/text")
+
+    for p in page.iter("place"):
+        initial_marking = int(p.findtext("initialMarking/text", 0))
+        pname = p.find("name/text").text
+        places.add(Place( p.attrib['id'], pname, initial_marking))
+
+    for t in page.iter("transition"):
         transitions.add(Transition(t.attrib['id']))
-        
-    for a in page.iter(version+"arc"):
+
+    for a in page.iter("arc"):
         # = Arc(pnml_id=a.attrib['id'],source=a.attrib['source'],target = a.attrib['target'])
-        arcs.add(Arc(a.attrib['id'],a.attrib['source'],a.attrib['target'],int(list(list(a)[0])[0].text)))
-            
-    return PNML_net(name,places,transitions,arcs)        
 
-pnmls = []
-nets = []
+        arcs.add(Arc(a.attrib['id'], a.attrib['source'], a.attrib['target'], int(a.findtext("inscription/text", 1))))
 
-if __name__ == '__main__':
-    args = sys.argv
+    return PNML_net(name,places,transitions,arcs)
+
+#pnmls = []
+#nets = []
+
+#if __name__ == '__main__':
+#    args = sys.argv
         
-    if len(args) == 1 :
-        print("No file specified. Feed me some .pnml files!")
-    else :
+#    if len(args) == 1 :
+#        print("No file specified. Feed me some .pnml files!")
+#    else :
         #http://lxml.de/validation.html#relaxng
-        pnmlmodel = etree.parse(open('pnmlcoremodel.rng', 'r'))
-        grammar_validator = etree.RelaxNG(pnmlmodel)
+#        pnmlmodel = etree.parse(open('pnmlcoremodel.rng', 'r'))
+#        grammar_validator = etree.RelaxNG(pnmlmodel)
     
-        for arg in args[1:]:
+#        for arg in args[1:]:
 
 
-            nets.append(parse(arg))        
+#            nets.append(parse(arg))
 
             
             
