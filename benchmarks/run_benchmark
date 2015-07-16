@@ -1,0 +1,11 @@
+#!/bin/bash
+
+summary1=testset_results/summary1.txt
+summary2=testset_results/summary2.txt
+
+for file in testset/*
+do
+    python benchmark_solvers.py $file > testset_results/$file.md
+#    tail -n2 testset_results/$file.md | sed 1q >> $summary1
+#    tail -n1 testset_results/$file.md >> $summary2   
+done
